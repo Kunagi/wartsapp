@@ -93,6 +93,11 @@
             (assoc :eingecheckt? true)
             str)))))
 
+(defn serve-schlange [context]
+  (let [params (-> context :http/request :params)
+        schlange-id (-> params :id)
+        schlange (get-in @!state [:schlangen schlange-id])]
+    (str schlange)))
 
 (defn serve-update-ticket-by-praxis [context]
   (let [params (-> context :http/request :params)
@@ -107,10 +112,8 @@
         (assoc-in state [:schlangen schlange-id] schlange)))
     (str schlange)))
 
-
 (defn serve-state [context]
   (str @!state))
-
 
 (def-module
   {:module/id ::demo-serverapp})
@@ -141,6 +144,13 @@
    :route/module [:module/ident :demo-serverapp]
    :route/path "/api/ziehe-ticket"
    :route/serve-f #(serve-ziehe-ticket %)
+   :route/req-perms []})
+
+(def-route
+  {:route/id ::api-schlange
+   :route/module [:module/ident :demo-serverapp]
+   :route/path "/api/schlange"
+   :route/serve-f #(serve-schlange %)
    :route/req-perms []})
 
 (def-route

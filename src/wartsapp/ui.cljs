@@ -322,12 +322,12 @@
 (rf/reg-event-db
  :wartsapp/poll-schlange
  (fn [db _]
-   (when-let [ticket (get-in db [:assets/asset-pools :wartsapp/ticket "myticket.edn"])]
-     (ajax/GET "/api/ticket"
-               {:params {:id (-> ticket :id)}
+   (when-let [schlange (get-in db [:assets/asset-pools :wartsapp/schlange "myschlange.edn"])]
+     (ajax/GET "/api/schlange"
+               {:params {:id (-> schlange :id)}
                 :handler (fn [response]
-                           (let [ticket (reader/read-string response)]
-                             (rf/dispatch [:wartsapp/ticket-erhalten ticket])))
+                           (let [schlange (reader/read-string response)]
+                             (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
                 :error-handler #(js/console.log "ERROR" %)}))
    db))
 
@@ -337,14 +337,26 @@
    (js/console.log "ticket erhalten" ticket)
    (assets/set-asset db :wartsapp/ticket "myticket.edn" ticket)))
 
+(rf/reg-event-db
+ :wartsapp/schlange-erhalten
+ (fn [db [_ schlange]]
+   (js/console.log "schlange erhalten" schlange)
+   (assets/set-asset db :wartsapp/schlange "myschlange.edn" schlange)))
+
 
 (rf/reg-sub
  :wartsapp/ticket
  (fn [db _]
    (let [ticket (get-in db [:assets/asset-pools :wartsapp/ticket "myticket.edn"])]
-         ;; (assets/asset db :wartsapp/ticket "myticket.edn")]
      (js/console.log "ticket in sub:" ticket)
      ticket)))
+
+(rf/reg-sub
+ :wartsapp/schlange
+ (fn [db _]
+   (let [schlange (get-in db [:assets/asset-pools :wartsapp/schlange "myschlange.edn"])]
+     (js/console.log "schlange in sub:" schlange)
+     schlange)))
 
 
 ;;; Index
