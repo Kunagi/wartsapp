@@ -1,0 +1,23 @@
+{
+  "theme_color" : "#00695c",
+  "prefer_related_applications" : true,
+  "start_url" : "/ui/?utm_source=a2hs",
+  "name" : "WartsApp",
+  "background_color" : "#ffa726",
+  "scope" : "/",
+  "short_name" : "WartsApp",
+  "icons" : [ {
+    "src" : "/img/app-icon_192.png",
+    "type" : "image/png",
+    "sizes" : "192x192"
+  }, {
+    "src" : "/img/app-icon_512.png",
+    "type" : "image/png",
+    "sizes" : "512x512"
+  } ],
+  "related_applications" : [ {
+    "platform" : "play",
+    "id" : "de.koczewski.android.rinteln"
+  } ],
+  "display" : "standalone"
+}

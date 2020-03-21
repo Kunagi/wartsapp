@@ -1,0 +1,9 @@
+{:own [kunagi/kunagi-base-server
+       witek/html-tools]
+ :foreign {
+
+           ;clj
+
+           ;; cljs
+           hickory               {:mvn/version "0.7.1"}
+           day8.re-frame/http-fx {:mvn/version "0.1.6"}}}

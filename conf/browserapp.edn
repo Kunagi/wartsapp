@@ -1,0 +1,8 @@
+{:standalone? true
+ :serviceworker {:version 1
+                 :no-cache []
+                 :cache-first []
+                 :pre-cache []}
+ :colors {:primary "#00695c"
+          :background "#ffa726"}
+ :related-apps {:play "de.koczewski.android.rinteln"}}

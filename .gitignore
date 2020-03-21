@@ -1,7 +1,13 @@
+/public-web-resources/gesetze
+/node_modules
+/.shadow-cljs
+
 pom.xml
 pom.xml.asc
+config.edn
 *.jar
 *.class
+/app-data
 /lib/
 /classes/
 /target/
