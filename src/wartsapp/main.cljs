@@ -72,7 +72,7 @@
   (init/mount-app Desktop))
 
 (defn init []
-  ;; (startup/install-serviceworker!)
+  (startup/install-serviceworker!)
   (fonts/install!)
   (desktop/install-error-handler)
   (startup/start!
