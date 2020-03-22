@@ -47,33 +47,40 @@
 
 
 (defn Schlange-Ticket [ticket]
-  [muic/Card
-   [muic/Stack
-    {:spacing (theme/spacing 1)}
-    [:div
-     {:style {:display :grid
-              :grid-template-columns "60px auto"}}
-     [:h3
-      (-> ticket :nummer)]
-     [:> mui/TextField
-      {:label "Patient"
-       :default-value (-> ticket :praxis-patient)
-       :on-change #(rf/dispatch [:wartsapp/ticket-praxis-patient-changed
-                                 (-> ticket :id)
-                                 (-> % .-target .-value)])}]]
-    [:div
-     {:style {:display :grid
-              :grid-template-columns "1fr 1fr 1fr 1fr"
-              :grid-gap (theme/spacing 2)}}
-     [TimeField "Eingecheckt" (-> ticket :eingecheckt)]
-     [TimeField "Aufgerufen" (-> ticket :aufgerufen)]
-     [TimeField "Unterwegs" (-> ticket :unterwegs)]]
-    (when-not (-> ticket :aufgerufen)
-      [:> mui/Button
-       {:variant :contained
-        :color :primary
-        :on-click #(rf/dispatch [:wartsapp/aufrufen-clicked (-> ticket :id)])}
-       "Aufrufen"])]])
+  (if-not (ticket :entfernt)
+    [muic/Card
+     [muic/Stack
+      {:spacing (theme/spacing 1)}
+      [:div
+       {:style {:display :grid
+                :grid-template-columns "60px auto 60px"}}
+       [:h3
+        (-> ticket :nummer)]
+       [:> mui/TextField
+        {:label "Patient"
+         :default-value (-> ticket :praxis-patient)
+         :on-change #(rf/dispatch [:wartsapp/ticket-praxis-patient-changed
+                                   (-> ticket :id)
+                                   (-> % .-target .-value)])}]
+       [:> mui/IconButton
+        {:color :secondary
+         :aria-label "Ticket Entfernen"
+         :on-click #(rf/dispatch [:wartsapp/ticket-entfernen-clicked (-> ticket :id)])}
+        [:> icons/Delete]]]
+      [:div
+       {:style {:display :grid
+                :grid-template-columns "1fr 1fr 1fr 1fr"
+                :grid-gap (theme/spacing 2)}}
+       [TimeField "Eingecheckt" (-> ticket :eingecheckt)]
+       [TimeField "Aufgerufen" (-> ticket :aufgerufen)]
+       [TimeField "Unterwegs" (-> ticket :unterwegs)]]
+      (when-not (-> ticket :aufgerufen)
+        [:> mui/Button
+         {:variant :contained
+          :color :primary
+          :on-click #(rf/dispatch [:wartsapp/aufrufen-clicked (-> ticket :id)])}
+         "Aufrufen"])]]))
+
     ;; [muic/Data ticket]]])
 
 
@@ -154,6 +161,18 @@
    (ajax/GET "/api/update-ticket-by-praxis"
              {:params {:ticket ticket-id
                        :props (str {:aufgerufen (daten/ts)})}
+              :handler (fn [response]
+                         (let [schlange (reader/read-string response)]
+                           (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
+              :error-handler #(js/console.log "ERROR" %)})
+   db))
+
+(rf/reg-event-db
+ :wartsapp/ticket-entfernen-clicked
+ (fn [db [_ ticket-id]]
+   (ajax/GET "/api/update-ticket-by-praxis"
+             {:params {:ticket ticket-id
+                       :props (str {:entfernt (daten/ts)})}
               :handler (fn [response]
                          (let [schlange (reader/read-string response)]
                            (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
@@ -281,8 +300,17 @@
     "Sie sind eingecheckt"]
    [:p "Bitte warten Sie auf den Aufruf"]])
 
+(defn Ticket-Entfernt-Box []
+  [:div
+   {:style {
+            :text-align :center}}
+   [:h3
+    "Die Praxis hat ihr Ticket entfernt"]
+   [:p "Damit ist der Vorgang abgeschlossen"]])
+
 (defn Ticket-Call-To-Action-Box [ticket]
   (cond
+    (-> ticket :entfernt) [Ticket-Entfernt-Box]
     (-> ticket :unterwegs) [Ticket-Unterwegs-Box]
     (-> ticket :aufgerufen) [Ticket-Aufgerufen-Box]
     (-> ticket :eingecheckt?) [Ticket-Warten-Box]
@@ -333,8 +361,9 @@
           [Ticket-Nummer (-> ticket :nummer)]
           [Notification-Config]])]]
      ;; [muic/Card [:div "Debug"] [muic/Data ticket]]])
-     (when (or (-> ticket :unterwegs)
-               (not (-> ticket :eingecheckt)))
+     (when (or (ticket :unterwegs)
+               (ticket :entfernt)
+               (not (ticket :eingecheckt)))
        [:> mui/Button
         {:variant :contained
          :color :primary
