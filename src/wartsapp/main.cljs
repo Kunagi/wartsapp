@@ -23,21 +23,11 @@
 (def-module
   {:module/id ::demo-browserapp})
 
-;; deprecated
-(def-asset-pool
-  {:asset-pool/id ::tickets
-   :asset-pool/ident :wartsapp/tickets})
-
 (def-asset-pool
   {:asset-pool/id ::ticket
    :asset-pool/ident :wartsapp/ticket
    :asset-pool/localstorage? true
    :asset-pool/load-on-startup ["myticket.edn"]})
-
-;; deprecated
-(def-asset-pool
-  {:asset-pool/id ::schlangen
-   :asset-pool/ident :wartsapp/schlangen})
 
 (def-asset-pool
   {:asset-pool/id ::schlange
