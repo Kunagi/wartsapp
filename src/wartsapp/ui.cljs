@@ -278,7 +278,6 @@
   (let [!permission-granted? (r/atom (notifications/permission-granted?))]
     (fn []
       [:div
-       [muic/Data (notifications/info)]
        (when-not @!permission-granted?
          [muic/Stack
           {:spacing (theme/spacing 1)

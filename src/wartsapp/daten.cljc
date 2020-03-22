@@ -67,7 +67,7 @@
 ;; TODO https://github.com/zelark/nano-id
 
 (defn neue-ticket-nummer []
-  (.substring (new-uuid) 0 3))
+  (.substring (new-uuid) 0 5))
 
 (defn neues-ticket []
   {:nummer (neue-ticket-nummer)
