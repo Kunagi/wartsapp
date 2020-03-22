@@ -66,11 +66,18 @@
 
 ;; TODO https://github.com/zelark/nano-id
 
-(defn neue-ticket-nummer []
-  (.substring (new-uuid) 0 5))
+(defonce !ticket-nummern (atom #{}))
+
+(defn neue-ticket-nummer [length]
+  (let [nummer (.substring (new-uuid) 0 length)]
+    (if (contains? @!ticket-nummern nummer)
+      (neue-ticket-nummer (inc length))
+      (do
+        (swap! !ticket-nummern conj nummer)
+        nummer))))
 
 (defn neues-ticket []
-  {:nummer (neue-ticket-nummer)
+  {:nummer (neue-ticket-nummer 3)
    :id (new-uuid)
    :erstellt (ts)
    :praxis-patient ""})
