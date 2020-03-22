@@ -35,7 +35,9 @@
 
 (defn with-state [f]
   (swap! !state f)
-  (spit state-path @!state))
+  (let [file (-> state-path java.io.File.)]
+    (when-not (-> file .exists) (-> file .getParentFile .mkdirs))
+    (spit state-path @!state)))
 
 
 (defn serve-ziehe-ticket [context]
