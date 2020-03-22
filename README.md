@@ -14,6 +14,21 @@ https://wartsapp.frankenburg.software
 
 Projekt wurde beim WirVsVirius Hackathon gestartet: https://devpost.com/software/01_033_lebensnotwendigedienstleistungen_wartsapp
 
+# Projektfortschritt
+
+* Freitag 20.03.2020
+  * Projektauswahl aus dem Hackathon
+  * Teamfindung
+  * erste Diskussionen über User-Stories
+  
+* Samstag, 21.03.2020
+  * Aufsetzen des Projektes (git, Framework Libraries, Name und Bilder)
+  * Domainregistrierung und Deployment der leeren App auf einem günstigen VirtualServer
+  * Mob-Programming der Kernfunktionalitäten mittels TeamViewer und TeamSpeak
+  
+* Sonntag, 22.03.2020
+  * Implementierung der Push-Notifications und Feinschliff des User-Interfaces
+  * Videodreh für den Hackathon
 
 # Technik
 
