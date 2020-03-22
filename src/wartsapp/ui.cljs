@@ -200,7 +200,9 @@
                          :ticket ticket-nummer}
                 :handler (fn [response]
                            (let [schlange (reader/read-string response)]
-                             (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
+                             (rf/dispatch [:wartsapp/schlange-erhalten schlange])
+                             (when-not (-> schlange :checkin-fehler)
+                               (rf/dispatch [:wartsapp/checkin-ticket-nummer-changed ""]))))
                 :error-handler #(js/console.log "ERROR" %)})
      db)))
    ;; (let [ticket-nummer (get-in db [:wartsapp :praxis :checkin-ticket-nummer])
