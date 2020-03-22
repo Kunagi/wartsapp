@@ -630,7 +630,7 @@
     [:div
      "v" (-> appinfo :release :major) "." (-> appinfo :release :minor)
      " | build " (-> appinfo :build-time)
-     " | Frankenburg Softwaretechnik"]]])
+     " | Kunagi Team (WirVsVirus Hackathon)"]]])
 
 
 (defn Desktop []
