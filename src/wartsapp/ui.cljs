@@ -63,10 +63,11 @@
                                  (-> % .-target .-value)])}]]
     [:div
      {:style {:display :grid
-              :grid-template-columns "1fr 1fr 1fr"
+              :grid-template-columns "1fr 1fr 1fr 1fr"
               :grid-gap (theme/spacing 2)}}
      [TimeField "Eingecheckt" (-> ticket :eingecheckt)]
-     [TimeField "Aufgerufen" (-> ticket :aufgerufen)]]
+     [TimeField "Aufgerufen" (-> ticket :aufgerufen)]
+     [TimeField "Auf dem Weg" (-> ticket :aufdemweg)]]
     (when-not (-> ticket :aufgerufen)
       [:> mui/Button
        {:variant :contained
@@ -228,6 +229,7 @@
    {:alternative-label true
     :active-step (cond
                    (not ticket) 0
+                   (-> ticket :aufdemweg) 4
                    (-> ticket :aufgerufen) 3
                    (-> ticket :eingecheckt?) 2
                    :else 1)}
@@ -236,10 +238,22 @@
      "Ticket ziehen"]]
    [:> mui/Step
     [:> mui/StepLabel
-     "Einchecken"]]
+     "In Praxis einchecken"]]
    [:> mui/Step
     [:> mui/StepLabel
-     "Aufgerufen werden"]]])
+     "Aufgerufen werden"]]
+   [:> mui/Step
+    [:> mui/StepLabel
+     "Auf den Weg machen"]]])
+
+(defn Auf-Dem-Weg-Box []
+  [muic/Card
+   {:style {:background-color (theme/color-secondary-main)
+            :color (theme/color-secondary-contrast)
+            :text-align :center}}
+   [:h3
+    "Sie haben den Aufruf bestätigt"]
+   [:p "Die Praxis erwartet Sie jetzt"]])
 
 (defn Ticket-Aufgerufen-Box []
   [muic/Card
@@ -248,7 +262,12 @@
             :text-align :center}}
    [:h3
     "Sie wurden aufgerufen"]
-   [:p "Bitte machen Sie sich auf den Weg zur Praxis"]])
+   [:p "Bitte machen Sie sich auf den Weg zur Praxis"]
+   [:> mui/Button
+    {:variant :contained
+     :color :primary
+     :on-click #(rf/dispatch [:wartsapp/ich-bin-auf-dem-weg-clicked])}
+    "Ich bin auf dem Weg"]])
 
 (defn Ticket-Warten-Box []
   [:div
@@ -309,7 +328,7 @@
           [Ticket-Nummer (-> ticket :nummer)]
           [Notification-Config]])]]
      ;; [muic/Card [:div "Debug"] [muic/Data ticket]]])
-     (when (or (-> ticket :aufgerufen)
+     (when (or (-> ticket :aufdemweg)
                (not (-> ticket :eingecheckt)))
        [:> mui/Button
         {:variant :contained
@@ -330,6 +349,20 @@
                            (rf/dispatch [:wartsapp/ticket-erhalten ticket])))
               :error-handler #(js/console.log "ERROR" %)})
    db))
+
+(rf/reg-event-db
+ :wartsapp/ich-bin-auf-dem-weg-clicked
+ (fn [db _]
+   (when-let [ticket (get-in db [:assets/asset-pools :wartsapp/ticket "myticket.edn"])]
+     (ajax/GET "/api/bestaetige-aufruf"
+               {:params {:id (-> ticket :id)}
+                :handler (fn [response]
+                           (let [ticket (reader/read-string response)]
+                             (js/console.log "TICKET" ticket)
+                             (rf/dispatch [:wartsapp/ticket-erhalten ticket])))
+                :error-handler #(js/console.log "ERROR" %)}))
+   db))
+
    ;; (let [ticket-nummer (daten/neue-ticket-nummer)
    ;;       asset-path (str ticket-nummer ".edn")
    ;;       ticket (or (assets/asset db :wartsapp/tickets asset-path)
@@ -422,19 +455,28 @@
      {:href "http://fabianhager.de"
       :target :_blank}
      "Fabian Hager"]
-    " und "
+    ", "
     [:> mui/Link
      {:href "https://www.linkedin.com/in/artjom-weyand-74437a155/"
       :target :_blank}
      "Artjom Weyand"]
-    " beim "]
-   [:img
-    {:src "/img/hackathon.jpg"
-     :style {:max-width "100%"}}]
+    " und "
+    [:> mui/Link
+      {:href "mailto:kacper@grubalski.de"
+       :target :_blank}
+     "Kacper Grubalski"]
+    " beim "
+    [:div
+     {:style {:text-align :center
+              :margin-top (theme/spacing 4)
+              :margin-bottom (theme/spacing 3)}}
+     [:img
+      {:src "/img/hackathon.jpg"
+       :style {:max-width "350px"}}]]]
    [:p
-    "Wenn Patienten zum Arzt gehen, kommt es in der Regel dazu, bis zur Behandlung im Wartezimmer Platz nehmen müssen. Hier ist das Ansteckungsrisiko jedoch besonders hoch."]
+    "Wenn Patienten eine Praxis aufsuchen, müssen sie in der Regel bis zur Behandlung im Wartezimmer Platz nehmen. Hier ist das Ansteckungsrisiko jedoch besonders hoch."]
    [:p
-    "Um dieses Risiko zu reduzieren, sollen die Patienten in einem digitalen Wartezimmer warten und sich dabei außerhalb der Praxis aufhalten, z.B. im eigenen Auto."]])
+    "Um dieses Risiko zu reduzieren, sollen die Patienten in einem digitalen Wartezimmer warten und sich dabei außerhalb der Praxis aufhalten, zum Beispiel im eigenen Auto."]])
 
 
 (defn Index-Workarea []
@@ -451,14 +493,14 @@
        [:> mui/CardContent
         {:style {:text-align :center}}
         [:h3 "Ich bin Patient"]
-        [:p "Ich möchte einen mobilen Warteplatz"]]]]
+        [:p "Ich möchte einen digitalen Warteplatz"]]]]
      [:> mui/Card
       [:> mui/CardActionArea
        {:href "schlange"}
        [:> mui/CardContent
         {:style {:text-align :center}}
-        [:h3 "Ich bin Arzt"]
-        [:p "Ich möchte ein mobiles Wartezimmer anbieten"]]]]]
+        [:h3 "Ich bin Ärztin"]
+        [:p "Ich möchte ein digitales Wartezimmer anbieten"]]]]]
     [Info-Card]
     [:div
      {:style {:text-align :right}}
