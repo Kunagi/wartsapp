@@ -256,6 +256,21 @@
     "Sie sind eingecheckt"]
    [:p "Bitte warten Sie auf den Aufruf"]])
 
+(defn Ticket-Call-To-Action-Box [ticket]
+  (cond
+    (-> ticket :aufgerufen) [Ticket-Aufgerufen-Box]
+    (-> ticket :eingecheckt?) [Ticket-Warten-Box]
+    :else nil))
+
+(defn Ticket-Nummer [nummer]
+  [:h1
+   {:style {:text-align :center
+            :font-size "500%"
+            :margin "0 0"
+            :padding-top "30px"
+            :padding-bottom "10px"}}
+   nummer])
+
 (defn Ticket []
   (let [ticket (get-in @(rf/subscribe [:app/db])
                        [:assets/asset-pools :wartsapp/ticket "myticket.edn"])]
@@ -263,22 +278,15 @@
      {:spacing (theme/spacing 2)}
      [muic/Card
       {:elevation 0}
-      [Ticket-Stepper ticket]
-      (when ticket
-        [muic/Stack
-         {:spacing (theme/spacing 1)}
+      [muic/Stack
+       {:spacing (theme/spacing 2)}
+       [Ticket-Stepper ticket]
+       (when ticket
          [muic/Stack
-          [:h1
-           {:style {:text-align :center
-                    :font-size "500%"
-                    :padding-top "30px"
-                    :padding-bottom "10px"}}
-           (-> ticket :nummer)]
-          (cond
-            (-> ticket :aufgerufen) [Ticket-Aufgerufen-Box]
-            (-> ticket :eingecheckt?) [Ticket-Warten-Box]
-            :else nil)]])]
-         ;; [muic/Card [:div "Debug"] [muic/Data ticket]]])
+          {:spacing (theme/spacing 1)}
+          [Ticket-Call-To-Action-Box ticket]
+          [Ticket-Nummer (-> ticket :nummer)]])]]
+          ;; [muic/Card [:div "Debug"] [muic/Data ticket]]])
      [:> mui/Button
       {:variant :contained
        :color :primary
@@ -405,14 +413,14 @@
        [:> mui/CardContent
         {:style {:text-align :center}}
         [:h3 "Ich bin Patient"]
-        [:p "Ich möchte einen Warteplatz"]]]]
+        [:p "Ich möchte einen mobilen Warteplatz"]]]]
      [:> mui/Card
       [:> mui/CardActionArea
        {:href "schlange"}
        [:> mui/CardContent
         {:style {:text-align :center}}
         [:h3 "Ich bin Arzt"]
-        [:p "Ich habe ein Wartezimmer"]]]]]
+        [:p "Ich möchte ein mobiles Wartezimmer anbieten"]]]]]
     [Info-Card]
     [:div
      {:style {:text-align :right}}
