@@ -361,15 +361,40 @@
 
 ;;; Index
 
+(defn Info-Card []
+  [muic/Card
+   [:div
+    {:style {:text-align :center
+             :margin-bottom (theme/spacing 1)}}
+    "Ein Projekt von "
+    [:> mui/Link
+     {:href "http://koczewski.de"
+      :target :_blank}
+     "Witoslaw Koczewski"]
+    ", "
+    [:> mui/Link
+     {:href "http://fabianhager.de"
+      :target :_blank}
+     "Fabian Hager"]
+    " und "
+    [:> mui/Link
+     {:href "https://www.linkedin.com/in/artjom-weyand-74437a155/"
+      :target :_blank}
+     "Artjom Weyand"]
+    " beim "]
+   [:img
+    {:src "/img/hackathon.jpg"
+     :style {:max-width "100%"}}]
+   [:p
+    "Wenn Patienten zum Arzt gehen, kommt es in der Regel dazu, bis zur Behandlung im Wartezimmer Platz nehmen müssen. Hier ist das Ansteckungsrisiko jedoch besonders hoch."]
+   [:p
+    "Um dieses Risiko zu reduzieren, sollen die Patienten in einem digitalen Wartezimmer warten und sich dabei außerhalb der Praxis aufhalten, z.B. im eigenen Auto."]])
+
+
 (defn Index-Workarea []
   [:div.Index-Workarea
    [muic/Stack
     {:spacing (theme/spacing 2)}
-    [muic/Card
-     [:p
-      "Wenn Patienten zum Arzt gehen, kommt es in der Regel dazu, bis zur Behandlung im Wartezimmer Platz nehmen müssen. Hier ist das Ansteckungsrisiko jedoch besonders hoch."]
-     [:p
-      "Um dieses Risiko zu reduzieren, sollen die Patienten in einem digitalen Wartezimmer warten und sich dabei außerhalb der Praxis aufhalten, z.B. im eigenen Auto."]]
     [:div
      {:style {:display :grid
               :grid-template-columns "1fr 1fr"
@@ -388,6 +413,7 @@
         {:style {:text-align :center}}
         [:h3 "Ich bin Arzt"]
         [:p "Ich habe ein Wartezimmer"]]]]]
+    [Info-Card]
     [:div
      {:style {:text-align :right}}
      [:> mui/Link
