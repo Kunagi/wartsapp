@@ -87,6 +87,8 @@
       :value @(rf/subscribe [:wartsapp/checkin-ticket-nummer])
       :on-change #(rf/dispatch [:wartsapp/checkin-ticket-nummer-changed
                                 (-> % .-target .-value)])
+      :on-key-down #(when (= 13 (-> % .-keyCode))
+                      (rf/dispatch [:wartsapp/checkin-clicked]))
       :error (-> schlange :checkin-fehler)
       :helper-text (-> schlange :checkin-fehler)}]
     [:> mui/Button
