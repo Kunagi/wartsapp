@@ -14,3 +14,11 @@ https://wartsapp.frankenburg.software
 
 Projekt wurde beim WirVsVirius Hackathon gestartet: https://devpost.com/software/01_033_lebensnotwendigedienstleistungen_wartsapp
 
+
+# Technik
+
+WartsApp besteht aus zwei Anwendungen.
+
+## Server
+
+Der Server ist Clojure programmiert und läuft daher als Java-Anwendung auf einem beliebigen Java Web Application Server. Wir verwenden http-kit.
