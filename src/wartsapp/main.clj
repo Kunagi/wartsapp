@@ -112,6 +112,20 @@
         (assoc-in state [:schlangen schlange-id] schlange)))
     (str schlange)))
 
+(defn serve-update-ticket-by-patient [context]
+  (let [params (-> context :http/request :params)
+        ticket-id (-> params :ticket)
+        props (edn/read-string (-> params :props))
+        schlange-id (get-in @!state [:ticket-id->schlange-id ticket-id])
+        schlange (get-in @!state [:schlangen schlange-id])
+        schlange (daten/update-ticket schlange ticket-id props)
+        ticket (daten/finde-ticket-by-id (-> schlange :plaetze) ticket-id)]
+    (tap> [:inf ::update {:ticket-id ticket-id :props props}])
+    (with-state
+      (fn [state]
+        (assoc-in state [:schlangen schlange-id] schlange)))
+    (str ticket)))
+
 (defn serve-state [context]
   (str @!state))
 
@@ -130,6 +144,13 @@
    :route/module [:module/ident :demo-serverapp]
    :route/path "/api/update-ticket-by-praxis"
    :route/serve-f #(serve-update-ticket-by-praxis %)
+   :route/req-perms []})
+
+(def-route
+  {:route/id ::api-update-ticket-by-patient
+   :route/module [:module/ident :demo-serverapp]
+   :route/path "/api/update-ticket-by-patient"
+   :route/serve-f #(serve-update-ticket-by-patient %)
    :route/req-perms []})
 
 (def-route

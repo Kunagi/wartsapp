@@ -67,7 +67,7 @@
               :grid-gap (theme/spacing 2)}}
      [TimeField "Eingecheckt" (-> ticket :eingecheckt)]
      [TimeField "Aufgerufen" (-> ticket :aufgerufen)]
-     [TimeField "Auf dem Weg" (-> ticket :aufdemweg)]]
+     [TimeField "Unterwegs" (-> ticket :unterwegs)]]
     (when-not (-> ticket :aufgerufen)
       [:> mui/Button
        {:variant :contained
@@ -229,7 +229,7 @@
    {:alternative-label true
     :active-step (cond
                    (not ticket) 0
-                   (-> ticket :aufdemweg) 4
+                   (-> ticket :unterwegs) 4
                    (-> ticket :aufgerufen) 3
                    (-> ticket :eingecheckt?) 2
                    :else 1)}
@@ -246,7 +246,7 @@
     [:> mui/StepLabel
      "Auf den Weg machen"]]])
 
-(defn Auf-Dem-Weg-Box []
+(defn Ticket-Unterwegs-Box []
   [muic/Card
    {:style {:background-color (theme/color-secondary-main)
             :color (theme/color-secondary-contrast)
@@ -266,8 +266,8 @@
    [:> mui/Button
     {:variant :contained
      :color :primary
-     :on-click #(rf/dispatch [:wartsapp/ich-bin-auf-dem-weg-clicked])}
-    "Ich bin auf dem Weg"]])
+     :on-click #(rf/dispatch [:wartsapp/ich-bin-unterwegs-clicked])}
+    "Ich bin unterwegs"]])
 
 (defn Ticket-Warten-Box []
   [:div
@@ -279,6 +279,7 @@
 
 (defn Ticket-Call-To-Action-Box [ticket]
   (cond
+    (-> ticket :unterwegs) [Ticket-Unterwegs-Box]
     (-> ticket :aufgerufen) [Ticket-Aufgerufen-Box]
     (-> ticket :eingecheckt?) [Ticket-Warten-Box]
     :else nil))
@@ -328,7 +329,7 @@
           [Ticket-Nummer (-> ticket :nummer)]
           [Notification-Config]])]]
      ;; [muic/Card [:div "Debug"] [muic/Data ticket]]])
-     (when (or (-> ticket :aufdemweg)
+     (when (or (-> ticket :unterwegs)
                (not (-> ticket :eingecheckt)))
        [:> mui/Button
         {:variant :contained
@@ -351,17 +352,17 @@
    db))
 
 (rf/reg-event-db
- :wartsapp/ich-bin-auf-dem-weg-clicked
+ :wartsapp/ich-bin-unterwegs-clicked
  (fn [db _]
-   (when-let [ticket (get-in db [:assets/asset-pools :wartsapp/ticket "myticket.edn"])]
-     (ajax/GET "/api/bestaetige-aufruf"
-               {:params {:id (-> ticket :id)}
+   (when-let [ticket-id ((get-in db [:assets/asset-pools :wartsapp/ticket "myticket.edn"]) :id)]
+     (ajax/GET "/api/update-ticket-by-patient"
+               {:params {:ticket ticket-id
+                         :props (str {:unterwegs (daten/ts)})}
                 :handler (fn [response]
                            (let [ticket (reader/read-string response)]
-                             (js/console.log "TICKET" ticket)
                              (rf/dispatch [:wartsapp/ticket-erhalten ticket])))
-                :error-handler #(js/console.log "ERROR" %)}))
-   db))
+                :error-handler #(js/console.log "ERROR" %)})
+     db)))
 
    ;; (let [ticket-nummer (daten/neue-ticket-nummer)
    ;;       asset-path (str ticket-nummer ".edn")
