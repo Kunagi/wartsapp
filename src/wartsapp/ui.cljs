@@ -405,11 +405,12 @@
          "Sie wurden aufgerufen"
          {:body "Bitte machen Sie sich auf den Weg zur Praxis."
           :icon "/img/app-icon_128.png"
-          :image "/img/app-icon_128.png"
           :lang "de"
           :tag (str "aufgerufen-" (-> ticket :id))
           :vibrate [300 200 100 200 300]
-          :requireInteraction true})
+          :requireInteraction true
+          :actions [{:action "show:/ui/ticket"
+                     :title "Zum Warteticket"}]})
         (.setItem (.-localStorage js/window) localstorage-key (daten/ts))))))
 
 (rf/reg-event-db

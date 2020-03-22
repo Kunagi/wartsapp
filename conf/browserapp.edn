@@ -1,6 +1,7 @@
 {:standalone? true
  :notifications? true
- :serviceworker {:version 1
+ :serviceworker {:version 2
+                 :caching-disabled? true
                  :no-cache []
                  :cache-first []
                  :pre-cache []}

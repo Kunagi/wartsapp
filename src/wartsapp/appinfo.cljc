@@ -9,11 +9,12 @@
                :notifications? true,
                :related-apps {:play "de.koczewski.android.rinteln"},
                :serviceworker {:cache-first [],
+                               :caching-disabled? true,
                                :no-cache [],
                                :pre-cache [],
-                               :version 1},
+                               :version 2},
                :standalone? true},
-  :build-time "2020-03-22 12:38",
+  :build-time "2020-03-22 14:57",
   :legal {:datenschutzerklaerung-bausteine [:vertragsabwicklung
                                             :serverdaten
                                             :cookies
@@ -21,7 +22,7 @@
                                             :nutzerbeitraege],
           :vendor "Team Kunagi\nWitoslaw Koczewski, Unter der Frankenburg 20, 31737 Rinteln, wi@koczewski.de\nFabian Hager, mail@fabianhager.de\nArtjom Weyand, artjom.kochtchi@googlemail.com"},
   :project {:group "kunagi", :id "wartsapp", :name "WartsApp"},
-  :release {:major 1, :minor 6},
+  :release {:major 1, :minor 11},
   :serverapp {:config-dir "/etc/wartsapp",
               :executable-name "wartsappd",
               :executable-path "/usr/local/bin/wartsappd",
