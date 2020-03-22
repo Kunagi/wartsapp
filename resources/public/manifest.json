@@ -1,5 +1,6 @@
 {
   "theme_color" : "#00695c",
+  "permissions" : [ "notifications" ],
   "prefer_related_applications" : true,
   "start_url" : "/ui/?utm_source=a2hs",
   "name" : "WartsApp",

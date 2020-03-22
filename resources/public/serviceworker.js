@@ -11,7 +11,17 @@ var PRE_CACHE = [
     BASE_URL + '/manifest.json',
     BASE_URL + '/favicon.ico',
     BASE_URL + '/favicon.png',
-    "https://wartsapp.frankenburg.software/fonts/montserrat-v14-latin-regular.woff", "https://wartsapp.frankenburg.software/fonts/montserrat-v14-latin-900.woff", "https://wartsapp.frankenburg.software/fonts/montserrat-v14-latin-500.woff", "https://wartsapp.frankenburg.software/fonts/montserrat-v14-latin-regular.woff2", "https://wartsapp.frankenburg.software/fonts/montserrat-v14-latin-900.woff2", "https://wartsapp.frankenburg.software/fonts/montserrat-v14-latin-500.woff2", "https://wartsapp.frankenburg.software/img/app-icon_192.png", "https://wartsapp.frankenburg.software/img/appbar-icon.png", "https://wartsapp.frankenburg.software/img/app-icon_512.png"
+    
+"https://wartsapp.frankenburg.software/fonts/montserrat-v14-latin-regular.woff", 
+"https://wartsapp.frankenburg.software/fonts/montserrat-v14-latin-900.woff", 
+"https://wartsapp.frankenburg.software/fonts/montserrat-v14-latin-500.woff", 
+"https://wartsapp.frankenburg.software/fonts/montserrat-v14-latin-regular.woff2", 
+"https://wartsapp.frankenburg.software/fonts/montserrat-v14-latin-900.woff2", 
+"https://wartsapp.frankenburg.software/fonts/montserrat-v14-latin-500.woff2", 
+"https://wartsapp.frankenburg.software/img/app-icon_192.png", 
+"https://wartsapp.frankenburg.software/img/appbar-icon.png", 
+"https://wartsapp.frankenburg.software/img/hackathon.jpg", 
+"https://wartsapp.frankenburg.software/img/app-icon_512.png"
 ];
 
 var NO_CACHE = [

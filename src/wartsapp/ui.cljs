@@ -6,6 +6,7 @@
      ["@material-ui/core/colors" :as mui-colors]
      ["@material-ui/core" :as mui]
      ["@material-ui/icons" :as icons]
+     [reagent.core :as r]
      [re-frame.core :as rf]
      [ajax.core :as ajax]
 
@@ -13,6 +14,7 @@
      [mui-commons.theme :as theme]
      [kunagi-base-browserapp.modules.desktop.components :as desktop]
      [kunagi-base-browserapp.modules.assets.api :as assets]
+     [kunagi-base-browserapp.notifications :as notifications]
 
      [wartsapp.appinfo :refer [appinfo]]
      [wartsapp.datenschutzerklaerung :as dse]
@@ -264,12 +266,31 @@
 
 (defn Ticket-Nummer [nummer]
   [:h1
-   {:style {:text-align :center
+   {:style {:font-family :monospace
+            :text-align :center
             :font-size "500%"
             :margin "0 0"
             :padding-top "30px"
             :padding-bottom "10px"}}
    nummer])
+
+(defn Notification-Config []
+  (let [!permission-granted? (r/atom (notifications/permission-granted?))]
+    (fn []
+      [:div
+       (when-not @!permission-granted?
+         [muic/Stack
+          {:spacing (theme/spacing 1)
+           :style {:text-align :center}}
+          [:> mui/Button
+           {:variant :contained
+            :color :primary
+            :on-click #(notifications/request-permission
+                        (fn [result]
+                          (tap> [::dbg ::permission-result result])
+                          (reset! !permission-granted? (= "granted" result))))}
+           "Popup Benachrichtigung aktivieren"]])])))
+
 
 (defn Ticket []
   (let [ticket (get-in @(rf/subscribe [:app/db])
@@ -285,13 +306,16 @@
          [muic/Stack
           {:spacing (theme/spacing 1)}
           [Ticket-Call-To-Action-Box ticket]
-          [Ticket-Nummer (-> ticket :nummer)]])]]
-          ;; [muic/Card [:div "Debug"] [muic/Data ticket]]])
-     [:> mui/Button
-      {:variant :contained
-       :color :primary
-       :on-click #(rf/dispatch [:wartsapp/ticket-anfordern-clicked])}
-      "Neues Ticket ziehen"]]))
+          [Ticket-Nummer (-> ticket :nummer)]
+          [Notification-Config]])]]
+     ;; [muic/Card [:div "Debug"] [muic/Data ticket]]])
+     (when (or (-> ticket :aufgerufen)
+               (not (-> ticket :eingecheckt)))
+       [:> mui/Button
+        {:variant :contained
+         :color :primary
+         :on-click #(rf/dispatch [:wartsapp/ticket-anfordern-clicked])}
+        "Neues Ticket ziehen"])]))
 
 (defn Ticket-Workarea []
   [Ticket])
@@ -339,16 +363,33 @@
                 :error-handler #(js/console.log "ERROR" %)}))
    db))
 
+(defn show-notification-wenn-aufgerufen [ticket]
+  (js/console.log "TICKET" (-> ticket :aufgerufen) "Y")
+  (when (-> ticket :aufgerufen)
+    (js/console.log "AUFGERUFEN" (-> ticket :nummer))
+    (let [localstorage-key (str "notification-aufgerufen-" (-> ticket :id))]
+      (when-not (.getItem (.-localStorage js/window) localstorage-key)
+        (js/console.log "NOTIFY!" (-> ticket :nummer))
+        (notifications/show-notification
+         "Sie wurden aufgerufen"
+         {:body "Bitte machen Sie sich auf den Weg zur Praxis."
+          :icon "/img/app-icon_128.png"
+          :image "/img/app-icon_128.png"
+          :lang "de"
+          :tag (str "aufgerufen-" (-> ticket :id))
+          :vibrate [300 200 100 200 300]
+          :requireInteraction true})
+        (.setItem (.-localStorage js/window) localstorage-key (daten/ts))))))
+
 (rf/reg-event-db
  :wartsapp/ticket-erhalten
  (fn [db [_ ticket]]
-   (js/console.log "ticket erhalten" ticket)
+   (show-notification-wenn-aufgerufen ticket)
    (assets/set-asset db :wartsapp/ticket "myticket.edn" ticket)))
 
 (rf/reg-event-db
  :wartsapp/schlange-erhalten
  (fn [db [_ schlange]]
-   (js/console.log "schlange erhalten" schlange)
    (assets/set-asset db :wartsapp/schlange "myschlange.edn" schlange)))
 
 

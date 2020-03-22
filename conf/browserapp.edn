@@ -1,4 +1,5 @@
 {:standalone? true
+ :notifications? true
  :serviceworker {:version 1
                  :no-cache []
                  :cache-first []
