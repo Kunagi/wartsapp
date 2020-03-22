@@ -13,7 +13,7 @@
                                :pre-cache [],
                                :version 1},
                :standalone? true},
-  :build-time "2020-03-22 10:56",
+  :build-time "2020-03-22 12:32",
   :legal {:datenschutzerklaerung-bausteine [:vertragsabwicklung
                                             :serverdaten
                                             :cookies
@@ -21,7 +21,7 @@
                                             :nutzerbeitraege],
           :vendor "Team Kunagi\nWitoslaw Koczewski, Unter der Frankenburg 20, 31737 Rinteln, wi@koczewski.de\nFabian Hager, mail@fabianhager.de\nArtjom Weyand, artjom.kochtchi@googlemail.com"},
   :project {:group "kunagi", :id "wartsapp", :name "WartsApp"},
-  :release {:major 1, :minor 2},
+  :release {:major 1, :minor 5},
   :serverapp {:config-dir "/etc/wartsapp",
               :executable-name "wartsappd",
               :executable-path "/usr/local/bin/wartsappd",

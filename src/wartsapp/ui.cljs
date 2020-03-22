@@ -278,6 +278,7 @@
   (let [!permission-granted? (r/atom (notifications/permission-granted?))]
     (fn []
       [:div
+       [muic/Data (notifications/info)]
        (when-not @!permission-granted?
          [muic/Stack
           {:spacing (theme/spacing 1)
@@ -364,12 +365,9 @@
    db))
 
 (defn show-notification-wenn-aufgerufen [ticket]
-  (js/console.log "TICKET" (-> ticket :aufgerufen) "Y")
   (when (-> ticket :aufgerufen)
-    (js/console.log "AUFGERUFEN" (-> ticket :nummer))
     (let [localstorage-key (str "notification-aufgerufen-" (-> ticket :id))]
       (when-not (.getItem (.-localStorage js/window) localstorage-key)
-        (js/console.log "NOTIFY!" (-> ticket :nummer))
         (notifications/show-notification
          "Sie wurden aufgerufen"
          {:body "Bitte machen Sie sich auf den Weg zur Praxis."

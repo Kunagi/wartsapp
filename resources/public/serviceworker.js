@@ -20,6 +20,7 @@ var PRE_CACHE = [
 "https://wartsapp.frankenburg.software/fonts/montserrat-v14-latin-500.woff2", 
 "https://wartsapp.frankenburg.software/img/app-icon_192.png", 
 "https://wartsapp.frankenburg.software/img/appbar-icon.png", 
+"https://wartsapp.frankenburg.software/img/app-icon_128.png", 
 "https://wartsapp.frankenburg.software/img/hackathon.jpg", 
 "https://wartsapp.frankenburg.software/img/app-icon_512.png"
 ];
