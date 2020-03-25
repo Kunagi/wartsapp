@@ -73,6 +73,7 @@
 (defn serve-ziehe-ticket [_context]
   (let [ticket-id (daten/neue-ticket-id)]
     (txa/transact-sync
+     !system
      (fn [system] (daten/ziehe-ticket system ticket-id)))
     (respond-with-ticket ticket-id)))
 
@@ -80,6 +81,7 @@
 (defn serve-eroeffne-schlange [context]
   (let [schlange-id (daten/neue-schlange-id)]
     (txa/transact-sync
+     !system
      (fn [system] (daten/eroeffne-schlange system schlange-id)))
     (respond-with-schlange schlange-id)))
 
@@ -89,6 +91,7 @@
         schlange-id (-> params :schlange)
         ticket-nummer (-> params :ticket)]
     (txa/transact-sync
+     !system
      (fn [system] (daten/checke-ein system schlange-id ticket-nummer)))
     (respond-with-schlange schlange-id)))
 
@@ -98,9 +101,10 @@
         ticket-id (-> params :ticket)
         props (edn/read-string (-> params :props))
         schlange-id (get-in (txa/read !system) [:ticket-id->schlange-id ticket-id])] ;; FIXME
-     (txa/transact-sync
-      (fn [system] (daten/update-ticket-by-praxis system ticket-id props)))
-     (respond-with-schlange schlange-id)))
+    (txa/transact-sync
+     !system
+     (fn [system] (daten/update-ticket-by-praxis system ticket-id props)))
+    (respond-with-schlange schlange-id)))
 
 
 (defn serve-update-ticket-by-patient [context]
@@ -108,6 +112,7 @@
         ticket-id (-> params :ticket)
         props (edn/read-string (-> params :props))]
     (txa/transact-sync
+     !system
      (fn [system] (daten/update-ticket-by-patient system ticket-id props)))
     (respond-with-ticket ticket-id)))
 
