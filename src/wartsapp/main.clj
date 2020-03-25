@@ -20,30 +20,42 @@
 
 (def state-path "app-data/state.edn")
 
-(defn load-state! []
+(defn read-state-from-disk! []
   (let [file (-> state-path java.io.File.)]
     (when (-> file .exists)
       (-> file slurp edn/read-string))))
 
-
-(defonce !state (atom (or
-                       (load-state!)
-                       {:freie-tickets {}
-                        :schlangen {}
-                        :ticket-id->schlange-id {}})))
-
-
-(defn with-state [f]
-  (swap! !state f)
+(defn write-state-to-disk! [state]
   (let [file (-> state-path java.io.File.)]
     (when-not (-> file .exists) (-> file .getParentFile .mkdirs))
-    (spit state-path @!state)))
+    (spit state-path state)))
+
+
+(defn on-agent-error [_agent ex]
+  (tap> [:err ::on-db-agent-error ex]))
+
+
+(defonce db (agent {}))
+(defonce !state (agent (or
+                        (read-state-from-disk!)
+                        {:freie-tickets {}
+                         :schlangen {}
+                         :ticket-id->schlange-id {}})
+                       :error-mode :continue
+                       :error-handler on-agent-error))
+
+(defn transact [f]
+  (send-off !state
+            (fn [state]
+              (let [state (f state)]
+                (write-state-to-disk! state)
+                state))))
 
 
 (defn serve-ziehe-ticket [context]
   (let [ticket (daten/neues-ticket)
         ticket-id (-> ticket :id)]
-    (with-state
+    (transact
       (fn [state]
         (assoc-in state [:freie-tickets ticket-id] ticket)))
     (tap> [:inf ::ticket-erstellt ticket])
@@ -53,7 +65,7 @@
 (defn serve-eroeffne-schlange [context]
   (let [schlange (daten/leere-schlange)
         schlange-id (-> schlange :id)]
-    (with-state
+    (transact
       (fn [state]
         (assoc-in state [:schlangen schlange-id] schlange)))
     (tap> [:inf ::schlange-eroeffnet schlange])
@@ -71,7 +83,7 @@
       (let [freie-tickets (get @!state :freie-tickets)
             [schlange ticket] (daten/checke-ein schlange freie-tickets ticket-nummer)
             ticket-id (-> ticket :id)]
-        (with-state
+        (transact
           (fn [state]
             (-> state
                 (assoc-in [:schlangen schlange-id] schlange)
@@ -109,7 +121,7 @@
         schlange (get-in @!state [:schlangen schlange-id])
         schlange (daten/update-ticket schlange ticket-id props)]
     (tap> [:inf ::update {:ticket-id ticket-id :props props}])
-    (with-state
+    (transact
       (fn [state]
         (assoc-in state [:schlangen schlange-id] schlange)))
     (str schlange)))
@@ -123,7 +135,7 @@
         schlange (daten/update-ticket schlange ticket-id props)
         ticket (daten/finde-ticket-by-id (-> schlange :plaetze) ticket-id)]
     (tap> [:inf ::update {:ticket-id ticket-id :props props}])
-    (with-state
+    (transact
       (fn [state]
         (assoc-in state [:schlangen schlange-id] schlange)))
     (str ticket)))
