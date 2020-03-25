@@ -1,7 +1,6 @@
 (ns wartsapp.main
   (:require
    [clojure.edn :as edn]
-   [puget.printer :as puget]
 
    [kunagi-base.logging.tap-formated]
    [kunagi-base.enable-asserts]
@@ -15,11 +14,15 @@
    [kunagi-base-server.modules.http-server.model :refer [def-route]]
    [kunagi-base-server.modules.browserapp.model]
 
+   [kcu.files :as files]
+
    [wartsapp.appinfo :refer [appinfo]]
    [wartsapp.daten :as daten]))
 
 
 (def storage-path "app-data")
+(def storage-schlangen-path (str storage-path "/schlangen"))
+
 
 (defn read-schlangen-from-disk! []
   (let [dir (-> storage-path (str "/schlangen") java.io.File.)]
@@ -42,21 +45,13 @@
             (read-schlangen-from-disk!))))
 
 
-(defn write-schlange-to-disk! [schlange]
-  (let [file (-> storage-path (str "/schlangen/" (get schlange :id) ".edn") java.io.File.)]
-    (when-not (-> file .exists) (-> file .getParentFile .mkdirs))
-    (spit file (puget/pprint-str schlange))))
-
-
 (defn write-state-to-disk! [state]
   (let [file (-> storage-path (str "/state.edn") java.io.File.)
         schlangen (-> state :schlangen vals)]
     (when-not (-> file .exists) (-> file .getParentFile .mkdirs))
-    (spit file (-> state
-                   (dissoc :schlangen)
-                   (puget/pprint-str)))
-    (doseq [schlange schlangen]
-      (write-schlange-to-disk! schlange))))
+    (files/write-edn file (-> state
+                              (dissoc :schlangen)))
+    (files/write-entities storage-schlangen-path schlangen)))
 
 
 (defn on-agent-error [_agent ex]
