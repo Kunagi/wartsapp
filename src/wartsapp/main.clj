@@ -15,6 +15,7 @@
    [kunagi-base-server.modules.browserapp.model]
 
    [kcu.files :as files]
+   [kcu.txa :as txa]
 
    [wartsapp.appinfo :refer [appinfo]]
    [wartsapp.daten :as daten]))
@@ -43,39 +44,26 @@
     (files/write-entities storage-schlangen-path schlangen)))
 
 
-(defn on-agent-error [_agent ex]
-  (tap> [:err ::on-db-agent-error ex]))
-
-
-(defonce db (agent {}))
-(defonce !state (agent (read-state-from-disk!)
-                       :error-mode :continue
-                       :error-handler on-agent-error))
-
-(defn transact! [f]
-  (send-off !state
-            (fn [state]
-              (let [state (f state)]
-                (write-state-to-disk! state)
-                state))))
-
-(defn transact-sync! [f]
-  (await (transact! f)))
+(txa/def-txa !system
+  {:load-f (fn [_txa] (read-state-from-disk!))
+   :store-f (fn [_txa value] (write-state-to-disk! value))})
 
 
 (defn respond-with-schlange [schlange-id]
-  (let [schlange (get-in @!state [:schlangen schlange-id])]
+  (let [system (txa/read !system)
+        schlange (get-in system [:schlangen schlange-id])]
     (str schlange)))
 
 
 (defn respond-with-ticket [ticket-id]
-  (let [ticket (get-in @!state [:freie-tickets ticket-id])]
+  (let [system (txa/read !system)
+        ticket (get-in system [:freie-tickets ticket-id])]
     (if ticket
       (-> ticket
           (assoc :eingecheckt? false)
           str)
-      (let [schlange-id (get-in @!state [:ticket-id->schlange-id ticket-id])
-            schlange (get-in @!state [:schlangen schlange-id])
+      (let [schlange-id (get-in system [:ticket-id->schlange-id ticket-id])
+            schlange (get-in system [:schlangen schlange-id])
             ticket (daten/finde-ticket-by-id (-> schlange :plaetze) ticket-id)]
         (-> ticket
             (assoc :eingecheckt? true)
@@ -84,14 +72,14 @@
 
 (defn serve-ziehe-ticket [_context]
   (let [ticket-id (daten/neue-ticket-id)]
-    (transact-sync!
+    (txa/transact-sync
      (fn [system] (daten/ziehe-ticket system ticket-id)))
     (respond-with-ticket ticket-id)))
 
 
 (defn serve-eroeffne-schlange [context]
   (let [schlange-id (daten/neue-schlange-id)]
-    (transact-sync!
+    (txa/transact-sync
      (fn [system] (daten/eroeffne-schlange system schlange-id)))
     (respond-with-schlange schlange-id)))
 
@@ -100,7 +88,7 @@
   (let [params (-> context :http/request :params)
         schlange-id (-> params :schlange)
         ticket-nummer (-> params :ticket)]
-    (transact-sync!
+    (txa/transact-sync
      (fn [system] (daten/checke-ein system schlange-id ticket-nummer)))
     (respond-with-schlange schlange-id)))
 
@@ -109,8 +97,8 @@
   (let [params (-> context :http/request :params)
         ticket-id (-> params :ticket)
         props (edn/read-string (-> params :props))
-        schlange-id (get-in @!state [:ticket-id->schlange-id ticket-id])] ;; FIXME
-     (transact-sync!
+        schlange-id (get-in (txa/read !system) [:ticket-id->schlange-id ticket-id])] ;; FIXME
+     (txa/transact-sync
       (fn [system] (daten/update-ticket-by-praxis system ticket-id props)))
      (respond-with-schlange schlange-id)))
 
@@ -119,7 +107,7 @@
   (let [params (-> context :http/request :params)
         ticket-id (-> params :ticket)
         props (edn/read-string (-> params :props))]
-    (transact-sync!
+    (txa/transact-sync
      (fn [system] (daten/update-ticket-by-patient system ticket-id props)))
     (respond-with-ticket ticket-id)))
 
@@ -137,7 +125,8 @@
 
 
 (defn serve-state [context]
-  (str @!state))
+  (str (txa/read !system)))
+
 
 (def-module
   {:module/id ::demo-serverapp})
