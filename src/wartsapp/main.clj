@@ -24,25 +24,14 @@
 (def storage-schlangen-path (str storage-path "/schlangen"))
 
 
-(defn read-schlangen-from-disk! []
-  (let [dir (-> storage-path (str "/schlangen") java.io.File.)]
-    (when (-> dir .exists)
-      (map (fn [file]
-             (-> file slurp edn/read-string))
-           (->> dir
-                .listFiles
-                (filter #(.endsWith (-> % .getName) ".edn")))))))
-
-
 (defn read-state-from-disk! []
   (let [file (-> storage-path (str "/state.edn") java.io.File.)
-        state (if (-> file .exists)
-                (-> file slurp edn/read-string)
-                (daten/neues-system))]
+        state (or (files/read-edn file)
+                  (daten/neues-system))]
     (reduce (fn [state schlange]
               (assoc-in state [:schlangen (-> schlange :id)] schlange))
             state
-            (read-schlangen-from-disk!))))
+            (files/read-entities storage-schlangen-path))))
 
 
 (defn write-state-to-disk! [state]
