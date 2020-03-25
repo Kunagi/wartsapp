@@ -1,6 +1,7 @@
 (ns wartsapp.main
   (:require
    [clojure.edn :as edn]
+   [puget.printer :as puget]
 
    [kunagi-base.logging.tap-formated]
    [kunagi-base.enable-asserts]
@@ -18,17 +19,44 @@
    [wartsapp.daten :as daten]))
 
 
-(def state-path "app-data/state.edn")
+(def storage-path "app-data")
+
+(defn read-schlangen-from-disk! []
+  (let [dir (-> storage-path (str "/schlangen") java.io.File.)]
+    (when (-> dir .exists)
+      (map (fn [file]
+             (-> file slurp edn/read-string))
+           (->> dir
+                .listFiles
+                (filter #(.endsWith (-> % .getName) ".edn")))))))
+
 
 (defn read-state-from-disk! []
-  (let [file (-> state-path java.io.File.)]
-    (when (-> file .exists)
-      (-> file slurp edn/read-string))))
+  (let [file (-> storage-path (str "/state.edn") java.io.File.)
+        state (if (-> file .exists)
+                (-> file slurp edn/read-string)
+                (daten/neues-system))]
+    (reduce (fn [state schlange]
+              (assoc-in state [:schlangen (-> schlange :id)] schlange))
+            state
+            (read-schlangen-from-disk!))))
+
+
+(defn write-schlange-to-disk! [schlange]
+  (let [file (-> storage-path (str "/schlangen/" (get schlange :id) ".edn") java.io.File.)]
+    (when-not (-> file .exists) (-> file .getParentFile .mkdirs))
+    (spit file (puget/pprint-str schlange))))
+
 
 (defn write-state-to-disk! [state]
-  (let [file (-> state-path java.io.File.)]
+  (let [file (-> storage-path (str "/state.edn") java.io.File.)
+        schlangen (-> state :schlangen vals)]
     (when-not (-> file .exists) (-> file .getParentFile .mkdirs))
-    (spit state-path state)))
+    (spit file (-> state
+                   (dissoc :schlangen)
+                   (puget/pprint-str)))
+    (doseq [schlange schlangen]
+      (write-schlange-to-disk! schlange))))
 
 
 (defn on-agent-error [_agent ex]
@@ -36,9 +64,7 @@
 
 
 (defonce db (agent {}))
-(defonce !state (agent (or
-                        (read-state-from-disk!)
-                        (daten/neues-system))
+(defonce !state (agent (read-state-from-disk!)
                        :error-mode :continue
                        :error-handler on-agent-error))
 
