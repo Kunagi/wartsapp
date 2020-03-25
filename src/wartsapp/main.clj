@@ -38,64 +38,28 @@
 (defonce db (agent {}))
 (defonce !state (agent (or
                         (read-state-from-disk!)
-                        {:freie-tickets {}
-                         :schlangen {}
-                         :ticket-id->schlange-id {}})
+                        (daten/neues-system))
                        :error-mode :continue
                        :error-handler on-agent-error))
 
-(defn transact [f]
+(defn transact! [f]
   (send-off !state
             (fn [state]
               (let [state (f state)]
                 (write-state-to-disk! state)
                 state))))
 
-
-(defn serve-ziehe-ticket [context]
-  (let [ticket (daten/neues-ticket)
-        ticket-id (-> ticket :id)]
-    (transact
-      (fn [state]
-        (assoc-in state [:freie-tickets ticket-id] ticket)))
-    (tap> [:inf ::ticket-erstellt ticket])
-    (str ticket)))
+(defn transact-sync! [f]
+  (await (transact! f)))
 
 
-(defn serve-eroeffne-schlange [context]
-  (let [schlange (daten/leere-schlange)
-        schlange-id (-> schlange :id)]
-    (transact
-      (fn [state]
-        (assoc-in state [:schlangen schlange-id] schlange)))
-    (tap> [:inf ::schlange-eroeffnet schlange])
+(defn respond-with-schlange [schlange-id]
+  (let [schlange (get-in @!state [:schlangen schlange-id])]
     (str schlange)))
 
 
-(defn serve-checke-ein [context]
-  (let [params (-> context :http/request :params)
-        schlange-id (-> params :schlange)
-        ticket-nummer (-> params :ticket)
-        schlange (get-in @!state [:schlangen schlange-id])]
-    (if-not schlange
-      {:status 416
-       :body (str "Schlange nicht gefunden: " schlange-id)}
-      (let [freie-tickets (get @!state :freie-tickets)
-            [schlange ticket] (daten/checke-ein schlange freie-tickets ticket-nummer)
-            ticket-id (-> ticket :id)]
-        (transact
-          (fn [state]
-            (-> state
-                (assoc-in [:schlangen schlange-id] schlange)
-                (update :freie-tickets dissoc ticket-id)
-                (assoc-in [:ticket-id->schlange-id ticket-id] schlange-id))))
-        (str schlange)))))
-
-
-(defn serve-ticket [context]
-  (let [params (-> context :http/request :params)
-        ticket-id (-> params :id)
-        ticket (get-in @!state [:freie-tickets ticket-id])]
+(defn respond-with-ticket [ticket-id]
+  (let [ticket (get-in @!state [:freie-tickets ticket-id])]
     (if ticket
       (-> ticket
           (assoc :eingecheckt? false)
@@ -107,38 +71,60 @@
             (assoc :eingecheckt? true)
             str)))))
 
-(defn serve-schlange [context]
+
+(defn serve-ziehe-ticket [_context]
+  (let [ticket-id (daten/neue-ticket-id)]
+    (transact-sync!
+     (fn [system] (daten/ziehe-ticket system ticket-id)))
+    (respond-with-ticket ticket-id)))
+
+
+(defn serve-eroeffne-schlange [context]
+  (let [schlange-id (daten/neue-schlange-id)]
+    (transact-sync!
+     (fn [system] (daten/eroeffne-schlange system schlange-id)))
+    (respond-with-schlange schlange-id)))
+
+
+(defn serve-checke-ein [context]
   (let [params (-> context :http/request :params)
-        schlange-id (-> params :id)
-        schlange (get-in @!state [:schlangen schlange-id])]
-    (str schlange)))
+        schlange-id (-> params :schlange)
+        ticket-nummer (-> params :ticket)]
+    (transact-sync!
+     (fn [system] (daten/checke-ein system schlange-id ticket-nummer)))
+    (respond-with-schlange schlange-id)))
+
 
 (defn serve-update-ticket-by-praxis [context]
   (let [params (-> context :http/request :params)
         ticket-id (-> params :ticket)
         props (edn/read-string (-> params :props))
-        schlange-id (get-in @!state [:ticket-id->schlange-id ticket-id])
-        schlange (get-in @!state [:schlangen schlange-id])
-        schlange (daten/update-ticket schlange ticket-id props)]
-    (tap> [:inf ::update {:ticket-id ticket-id :props props}])
-    (transact
-      (fn [state]
-        (assoc-in state [:schlangen schlange-id] schlange)))
-    (str schlange)))
+        schlange-id (get-in @!state [:ticket-id->schlange-id ticket-id])] ;; FIXME
+     (transact-sync!
+      (fn [system] (daten/update-ticket-by-praxis system ticket-id props)))
+     (respond-with-schlange schlange-id)))
+
 
 (defn serve-update-ticket-by-patient [context]
   (let [params (-> context :http/request :params)
         ticket-id (-> params :ticket)
-        props (edn/read-string (-> params :props))
-        schlange-id (get-in @!state [:ticket-id->schlange-id ticket-id])
-        schlange (get-in @!state [:schlangen schlange-id])
-        schlange (daten/update-ticket schlange ticket-id props)
-        ticket (daten/finde-ticket-by-id (-> schlange :plaetze) ticket-id)]
-    (tap> [:inf ::update {:ticket-id ticket-id :props props}])
-    (transact
-      (fn [state]
-        (assoc-in state [:schlangen schlange-id] schlange)))
-    (str ticket)))
+        props (edn/read-string (-> params :props))]
+    (transact-sync!
+     (fn [system] (daten/update-ticket-by-patient system ticket-id props)))
+    (respond-with-ticket ticket-id)))
+
+
+(defn serve-ticket [context]
+  (let [params (-> context :http/request :params)
+        ticket-id (-> params :id)]
+    (respond-with-ticket ticket-id)))
+
+
+(defn serve-schlange [context]
+  (let [params (-> context :http/request :params)
+        schlange-id (-> params :id)]
+    (respond-with-schlange schlange-id)))
+
 
 (defn serve-state [context]
   (str @!state))

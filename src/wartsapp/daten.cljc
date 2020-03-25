@@ -14,12 +14,15 @@
 ;;; warteschlange
 
 
-(defn leere-schlange []
-  {:id (new-uuid)
+(defn leere-schlange [id]
+  {:id id
    :bezeichnung "Neue Warteschlange"
    :plaetze [] ;; vom typ ticket
    :checkin-fehler nil})
 
+
+(defn neue-schlange-id []
+  (new-uuid))
 
 
 (defn ticket-eingecheckt? [schlange ticket-nummer]
@@ -41,11 +44,11 @@
        (filter (fn [ticket] (= ticket-id (:id ticket))))
        first))
 
-(defn checke-ein [schlange freie-tickets ticket-nummer]
+(defn checke-ein-in-schlange [schlange freie-tickets ticket-nummer]
   (let [schlange (dissoc schlange :checkin-fehler)
         ticket (finde-ticket-by-nummer (vals freie-tickets) ticket-nummer)
         bereits-eingecheckt? (ticket-eingecheckt? schlange ticket-nummer)
-        ticket (if ticket
+        ticket (when ticket
                  (assoc ticket :eingecheckt (ts)))]
     (cond
       bereits-eingecheckt? [schlange ticket]
@@ -76,8 +79,64 @@
         (swap! !ticket-nummern conj nummer)
         nummer))))
 
-(defn neues-ticket []
+(defn neue-ticket-id []
+  (new-uuid))
+
+(defn neues-ticket [ticket-id]
   {:nummer (neue-ticket-nummer 3)
-   :id (new-uuid)
+   :id ticket-id
    :erstellt (ts)
    :praxis-patient ""})
+
+
+;; app state
+
+(defn neues-system []
+  {:freie-tickets {}
+   :schlangen {}
+   :ticket-id->schlange-id {}})
+
+
+(defn ziehe-ticket [system neue-ticket-id]
+  (let [ticket (neues-ticket neue-ticket-id)]
+    (-> system
+        (assoc-in [:freie-tickets neue-ticket-id] ticket))))
+
+
+(defn freies-ticket [system ticket-id]
+  (get-in system [:freie-tickets ticket-id]))
+
+
+(defn eroeffne-schlange [system schlange-id]
+  (let [schlange (leere-schlange schlange-id)]
+    (-> system
+        (assoc-in [:schlangen schlange-id] schlange))))
+
+
+(defn checke-ein [system schlange-id ticket-nummer]
+  (let [schlange (get-in system [:schlangen schlange-id])]
+    (if-not schlange
+      system
+      (let [freie-tickets (get system :freie-tickets)
+            [schlange ticket] (checke-ein-in-schlange schlange freie-tickets ticket-nummer)
+            ticket-id (-> ticket :id)]
+        (-> system
+            (assoc-in [:schlangen schlange-id] schlange)
+            (update :freie-tickets dissoc ticket-id)
+            (assoc-in [:ticket-id->schlange-id ticket-id] schlange-id))))))
+
+
+(defn update-ticket-by-praxis [system ticket-id props]
+  (let [schlange-id (get-in system [:ticket-id->schlange-id ticket-id])
+        schlange (get-in system [:schlangen schlange-id])
+        schlange (update-ticket schlange ticket-id props)]
+    (-> system
+        (assoc-in [:schlangen schlange-id] schlange))))
+
+
+(defn update-ticket-by-patient [system ticket-id props]
+  (let [schlange-id (get-in system [:ticket-id->schlange-id ticket-id])
+        schlange (get-in system [:schlangen schlange-id])
+        schlange (update-ticket schlange ticket-id props)]
+    (-> system
+        (assoc-in [:schlangen schlange-id] schlange))))
