@@ -7,6 +7,8 @@
 
    [mui-commons.init :as init]
 
+   [kcu.bapp :as bapp]
+
    [kunagi-base.modules.startup.api :as startup]
    [kunagi-base.appmodel :refer [def-module]]
    [kunagi-base-browserapp.modules.desktop.model :refer [def-page]]
@@ -22,18 +24,6 @@
 
 (def-module
   {:module/id ::demo-browserapp})
-
-(def-asset-pool
-  {:asset-pool/id ::ticket
-   :asset-pool/ident :wartsapp/ticket
-   :asset-pool/localstorage? true
-   :asset-pool/load-on-startup ["myticket.edn"]})
-
-(def-asset-pool
-  {:asset-pool/id ::schlange
-   :asset-pool/ident :wartsapp/schlange
-   :asset-pool/localstorage? true
-   :asset-pool/load-on-startup ["myschlange.edn"]})
 
 (def-page
   {:page/id ::index
@@ -77,6 +67,7 @@
   (desktop/install-error-handler)
   (startup/start!
    {:app/info appinfo})
+  (bapp/init!)
   (poll!)
   (mount-app))
 

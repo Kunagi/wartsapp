@@ -10,7 +10,7 @@
      [re-frame.core :as rf]
      [ajax.core :as ajax]
 
-     [kcu.reframe :as krf]
+     [kcu.bapp :as bapp]
      [mui-commons.components :as muic]
      [mui-commons.theme :as theme]
      [kunagi-base-browserapp.modules.desktop.components :as desktop]
@@ -25,14 +25,22 @@
 ;;; data
 
 
-(krf/def-lense wartsapp
+(bapp/def-lense wartsapp
   {})
 
-(krf/def-lense praxis
+(bapp/def-lense praxis
   {:parent wartsapp})
 
-(krf/def-lense checkin-ticket-nummer
+(bapp/def-lense checkin-ticket-nummer
   {:parent praxis})
+
+(bapp/def-lense schlange-lense
+  {:parent praxis
+   :durable? true})
+
+(bapp/def-lense ticket-lense
+  {:parent praxis
+   :durable? true})
 
 
 (defn reg-ajax-event
@@ -78,14 +86,15 @@
 
 (rf/reg-event-db
  :wartsapp/schlange-erhalten
- (fn [db [_ ticket]]
-   (assets/set-asset db :wartsapp/schlange "myschlange.edn" ticket)))
+ (fn [db [_ value]]
+   (-> db
+       (bapp/reset schlange-lense value))))
 
 
 (rf/reg-event-db
  :wartsapp/ticket-praxis-patient-changed
  (fn [db [_ ticket-id value]]
-   (let [schlange (get-in db [:assets/asset-pools :wartsapp/schlange "myschlange.edn"])
+   (let [schlange (bapp/read db schlange-lense)
          schlange (daten/update-ticket schlange ticket-id {:praxis-patient value})]
      (ajax/GET "/api/update-ticket-by-praxis"
                {:params {:ticket ticket-id
@@ -94,14 +103,14 @@
                            (let [schlange (reader/read-string response)]
                              (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
                 :error-handler #(js/console.log "ERROR" %)})
-     (assets/set-asset db :wartsapp/schlange "myschlange.edn" schlange))))
+     (bapp/reset db schlange-lense schlange))))
 
 
 (rf/reg-event-db
  :wartsapp/checkin-clicked
  (fn [db _]
-   (let [ticket-nummer (krf/lense-get db checkin-ticket-nummer)
-         schlange-id (get-in db [:assets/asset-pools :wartsapp/schlange "myschlange.edn" :id])]
+   (let [ticket-nummer (bapp/read db checkin-ticket-nummer)
+         schlange-id (:id (bapp/read db schlange-lense))]
      (ajax/GET "/api/checke-ein"
                {:params {:schlange schlange-id
                          :ticket ticket-nummer}
@@ -109,7 +118,7 @@
                            (let [schlange (reader/read-string response)]
                              (rf/dispatch [:wartsapp/schlange-erhalten schlange])
                              (when-not (-> schlange :checkin-fehler)
-                               (krf/dispatch-setter checkin-ticket-nummer ""))))
+                               (bapp/dispatch-reset checkin-ticket-nummer ""))))
                 :error-handler #(js/console.log "ERROR" %)})
      db)))
 
@@ -124,7 +133,7 @@
  :wartsapp/ich-bin-unterwegs-clicked
  {:endpoint "/api/update-ticket-by-patient"
   :params (fn [db _]
-            {:ticket (get-in db [:assets/asset-pools :wartsapp/ticket "myticket.edn" :id])
+            {:ticket (bapp/read db ticket-lense)
              :props (str {:unterwegs (daten/ts)})})
   :response-event-id :wartsapp/ticket-erhalten})
 
@@ -132,7 +141,7 @@
 (rf/reg-event-db
  :wartsapp/poll-ticket
  (fn [db _]
-   (when-let [ticket (get-in db [:assets/asset-pools :wartsapp/ticket "myticket.edn"])]
+   (when-let [ticket (bapp/read db ticket-lense)]
      (ajax/GET "/api/ticket"
                {:params {:id (-> ticket :id)}
                 :handler (fn [response]
@@ -144,7 +153,7 @@
 (rf/reg-event-db
  :wartsapp/poll-schlange
  (fn [db _]
-   (when-let [schlange (get-in db [:assets/asset-pools :wartsapp/schlange "myschlange.edn"])]
+   (when-let [schlange (bapp/read db schlange-lense)]
      (ajax/GET "/api/schlange"
                {:params {:id (-> schlange :id)}
                 :handler (fn [response]
@@ -170,29 +179,15 @@
                      :title "Zum Warteticket"}]})
         (.setItem (.-localStorage js/window) localstorage-key (daten/ts))))))
 
+
 (rf/reg-event-db
  :wartsapp/ticket-erhalten
- (fn [db [_ ticket]]
-   (show-notification-wenn-aufgerufen ticket)
-   (assets/set-asset db :wartsapp/ticket "myticket.edn" ticket)))
-
-(rf/reg-event-db
- :wartsapp/schlange-erhalten
- (fn [db [_ schlange]]
-   (assets/set-asset db :wartsapp/schlange "myschlange.edn" schlange)))
+ (fn [db [_ value]]
+   (show-notification-wenn-aufgerufen value)
+   (-> db
+      (bapp/reset ticket-lense value))))
 
 
-(rf/reg-sub
- :wartsapp/ticket
- (fn [db _]
-   (let [ticket (get-in db [:assets/asset-pools :wartsapp/ticket "myticket.edn"])]
-     ticket)))
-
-(rf/reg-sub
- :wartsapp/schlange
- (fn [db _]
-   (let [schlange (get-in db [:assets/asset-pools :wartsapp/schlange "myschlange.edn"])]
-     schlange)))
 
 
 ;;; Warteschlange
@@ -265,8 +260,8 @@
     [:h3 "Ticket einchecken"]
     [:> mui/TextField
      {:label "Ticket-Nummer des Patienten"
-      :value (or (krf/subscribe checkin-ticket-nummer) "")
-      :on-change #(krf/dispatch-setter checkin-ticket-nummer
+      :value (or (bapp/subscribe checkin-ticket-nummer) "")
+      :on-change #(bapp/dispatch-reset checkin-ticket-nummer
                                        (-> % .-target .-value))
       :on-key-down #(when (= 13 (-> % .-keyCode))
                       (rf/dispatch [:wartsapp/checkin-clicked]))
@@ -280,9 +275,7 @@
 
 
 (defn Schlange-Workarea []
-  (if-let [schlange (get-in @(rf/subscribe [:app/db])
-                          [:assets/asset-pools :wartsapp/schlange "myschlange.edn"])]
-    ;; FIXME
+  (if-let [schlange (bapp/subscribe schlange-lense)]
     [:div
      {:style {:display :grid
               :grid-template-columns "2fr 1fr"
@@ -412,8 +405,7 @@
 
 
 (defn Ticket []
-  (let [ticket (get-in @(rf/subscribe [:app/db])
-                       [:assets/asset-pools :wartsapp/ticket "myticket.edn"])]
+  (let [ticket (bapp/subscribe ticket-lense)]
     [muic/Stack
      {:spacing (theme/spacing 2)}
      [muic/Card
@@ -438,7 +430,8 @@
 
 
 (defn Ticket-Workarea []
-  [Ticket])
+  [:div
+   [Ticket]])
 
 
 
