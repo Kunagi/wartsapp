@@ -10,6 +10,7 @@
      [re-frame.core :as rf]
      [ajax.core :as ajax]
 
+     [kcu.reframe :as krf]
      [mui-commons.components :as muic]
      [mui-commons.theme :as theme]
      [kunagi-base-browserapp.modules.desktop.components :as desktop]
@@ -19,6 +20,193 @@
      [wartsapp.appinfo :refer [appinfo]]
      [wartsapp.datenschutzerklaerung :as dse]
      [wartsapp.daten :as daten]))
+
+
+;;; data
+
+
+(krf/def-lense wartsapp
+  {})
+
+(krf/def-lense praxis
+  {:parent wartsapp})
+
+(krf/def-lense checkin-ticket-nummer
+  {:parent praxis})
+
+
+(rf/reg-event-db
+ :wartsapp/eroeffne-schlange-clicked
+ (fn [db _]
+   (ajax/GET "/api/eroeffne-schlange"
+             {:handler (fn [response]
+                         (let [schlange (reader/read-string response)]
+                           (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
+              :error-handler #(js/console.log "ERROR" %)})
+   db))
+
+
+(rf/reg-event-db
+ :wartsapp/aufrufen-clicked
+ (fn [db [_ ticket-id]]
+   (ajax/GET "/api/update-ticket-by-praxis"
+             {:params {:ticket ticket-id
+                       :props (str {:aufgerufen (daten/ts)})}
+              :handler (fn [response]
+                         (let [schlange (reader/read-string response)]
+                           (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
+              :error-handler #(js/console.log "ERROR" %)})
+   db))
+
+(rf/reg-event-db
+ :wartsapp/ticket-entfernen-clicked
+ (fn [db [_ ticket-id]]
+   (ajax/GET "/api/update-ticket-by-praxis"
+             {:params {:ticket ticket-id
+                       :props (str {:entfernt (daten/ts)})}
+              :handler (fn [response]
+                         (let [schlange (reader/read-string response)]
+                           (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
+              :error-handler #(js/console.log "ERROR" %)})
+   db))
+
+(rf/reg-event-db
+ :wartsapp/schlange-erhalten
+ (fn [db [_ ticket]]
+   (assets/set-asset db :wartsapp/schlange "myschlange.edn" ticket)))
+
+
+
+(rf/reg-event-db
+ :wartsapp/ticket-praxis-patient-changed
+ (fn [db [_ ticket-id value]]
+   (let [schlange (get-in db [:assets/asset-pools :wartsapp/schlange "myschlange.edn"])
+         schlange (daten/update-ticket schlange ticket-id {:praxis-patient value})]
+     (ajax/GET "/api/update-ticket-by-praxis"
+               {:params {:ticket ticket-id
+                         :props (str {:praxis-patient value})}
+                :handler (fn [response]
+                           (let [schlange (reader/read-string response)]
+                             (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
+                :error-handler #(js/console.log "ERROR" %)})
+     (assets/set-asset db :wartsapp/schlange "myschlange.edn" schlange))))
+
+
+(rf/reg-event-db
+ :wartsapp/checkin-clicked
+ (fn [db _]
+   (let [ticket-nummer (krf/lense-get db checkin-ticket-nummer)
+         schlange-id (get-in db [:assets/asset-pools :wartsapp/schlange "myschlange.edn" :id])]
+     (ajax/GET "/api/checke-ein"
+               {:params {:schlange schlange-id
+                         :ticket ticket-nummer}
+                :handler (fn [response]
+                           (let [schlange (reader/read-string response)]
+                             (rf/dispatch [:wartsapp/schlange-erhalten schlange])
+                             (when-not (-> schlange :checkin-fehler)
+                               (krf/dispatch-setter checkin-ticket-nummer ""))))
+                :error-handler #(js/console.log "ERROR" %)})
+     db)))
+
+
+(rf/reg-event-db
+ :wartsapp/ticket-anfordern-clicked
+ (fn [db _]
+   (ajax/GET "/api/ziehe-ticket"
+             {:handler (fn [response]
+                         (let [ticket (reader/read-string response)]
+                           (js/console.log "TICKET" ticket)
+                           (rf/dispatch [:wartsapp/ticket-erhalten ticket])))
+              :error-handler #(js/console.log "ERROR" %)})
+   db))
+
+(rf/reg-event-db
+ :wartsapp/ich-bin-unterwegs-clicked
+ (fn [db _]
+   (when-let [ticket-id ((get-in db [:assets/asset-pools :wartsapp/ticket "myticket.edn"]) :id)]
+     (ajax/GET "/api/update-ticket-by-patient"
+               {:params {:ticket ticket-id
+                         :props (str {:unterwegs (daten/ts)})}
+                :handler (fn [response]
+                           (let [ticket (reader/read-string response)]
+                             (rf/dispatch [:wartsapp/ticket-erhalten ticket])))
+                :error-handler #(js/console.log "ERROR" %)})
+     db)))
+
+   ;; (let [ticket-nummer (daten/neue-ticket-nummer)
+   ;;       asset-path (str ticket-nummer ".edn")
+   ;;       ticket (or (assets/asset db :wartsapp/tickets asset-path)
+   ;;                  (daten/neues-ticket ticket-nummer "Anonymous"))]
+   ;;   (-> db
+   ;;       (assoc-in [:wartsapp :patient :ticket-nummer] ticket-nummer)
+   ;;       (assets/set-asset :wartsapp/tickets asset-path ticket)))))
+
+
+(rf/reg-event-db
+ :wartsapp/poll-ticket
+ (fn [db _]
+   (when-let [ticket (get-in db [:assets/asset-pools :wartsapp/ticket "myticket.edn"])]
+     (ajax/GET "/api/ticket"
+               {:params {:id (-> ticket :id)}
+                :handler (fn [response]
+                           (let [ticket (reader/read-string response)]
+                             (rf/dispatch [:wartsapp/ticket-erhalten ticket])))
+                :error-handler #(js/console.log "ERROR" %)}))
+   db))
+
+(rf/reg-event-db
+ :wartsapp/poll-schlange
+ (fn [db _]
+   (when-let [schlange (get-in db [:assets/asset-pools :wartsapp/schlange "myschlange.edn"])]
+     (ajax/GET "/api/schlange"
+               {:params {:id (-> schlange :id)}
+                :handler (fn [response]
+                           (let [schlange (reader/read-string response)]
+                             (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
+                :error-handler #(js/console.log "ERROR" %)}))
+   db))
+
+(defn show-notification-wenn-aufgerufen [ticket]
+  (when (-> ticket :aufgerufen)
+    (let [localstorage-key (str "notification-aufgerufen-" (-> ticket :id))]
+      (when-not (.getItem (.-localStorage js/window) localstorage-key)
+        (notifications/show-notification
+         "Sie wurden aufgerufen"
+         {:body "Bitte machen Sie sich auf den Weg zur Praxis."
+          :icon "/img/app-icon_128.png"
+          :lang "de"
+          :tag (str "aufgerufen-" (-> ticket :id))
+          :vibrate [300 200 100 200 300]
+          :requireInteraction true
+          :actions [{:action "show:/ui/ticket"
+                     :title "Zum Warteticket"}]})
+        (.setItem (.-localStorage js/window) localstorage-key (daten/ts))))))
+
+(rf/reg-event-db
+ :wartsapp/ticket-erhalten
+ (fn [db [_ ticket]]
+   (show-notification-wenn-aufgerufen ticket)
+   (assets/set-asset db :wartsapp/ticket "myticket.edn" ticket)))
+
+(rf/reg-event-db
+ :wartsapp/schlange-erhalten
+ (fn [db [_ schlange]]
+   (assets/set-asset db :wartsapp/schlange "myschlange.edn" schlange)))
+
+
+(rf/reg-sub
+ :wartsapp/ticket
+ (fn [db _]
+   (let [ticket (get-in db [:assets/asset-pools :wartsapp/ticket "myticket.edn"])]
+     (js/console.log "ticket in sub:" ticket)
+     ticket)))
+
+(rf/reg-sub
+ :wartsapp/schlange
+ (fn [db _]
+   (let [schlange (get-in db [:assets/asset-pools :wartsapp/schlange "myschlange.edn"])]
+     (js/console.log "schlange in sub:" schlange)
+     schlange)))
 
 
 ;;; Warteschlange
@@ -91,9 +279,9 @@
     [:h3 "Ticket einchecken"]
     [:> mui/TextField
      {:label "Ticket-Nummer des Patienten"
-      :value @(rf/subscribe [:wartsapp/checkin-ticket-nummer])
-      :on-change #(rf/dispatch [:wartsapp/checkin-ticket-nummer-changed
-                                (-> % .-target .-value)])
+      :value (or (krf/subscribe checkin-ticket-nummer) "")
+      :on-change #(krf/dispatch-setter checkin-ticket-nummer
+                                       (-> % .-target .-value))
       :on-key-down #(when (= 13 (-> % .-keyCode))
                       (rf/dispatch [:wartsapp/checkin-clicked]))
       :error (-> schlange :checkin-fehler)
@@ -136,113 +324,6 @@
 
 
 
-(rf/reg-event-db
- :wartsapp/eroeffne-schlange-clicked
- (fn [db _]
-   (ajax/GET "/api/eroeffne-schlange"
-             {:handler (fn [response]
-                         (let [schlange (reader/read-string response)]
-                           (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
-              :error-handler #(js/console.log "ERROR" %)})
-   db))
-   ;; (let [schlange-nummer (or (get-in db [:wartsapp :praxis :schlange-nummer])
-   ;;                           "WS1")
-   ;;       asset-path (str schlange-nummer ".edn")
-   ;;       schlange (or (assets/asset db :wartsapp/schlangen asset-path)
-   ;;                    (daten/leere-schlange))]
-   ;;   (-> db
-   ;;       (assoc-in [:wartsapp :praxis :schlange-nummer] schlange-nummer)
-   ;;       (assets/set-asset :wartsapp/schlangen asset-path schlange)))))
-
-
-(rf/reg-event-db
- :wartsapp/aufrufen-clicked
- (fn [db [_ ticket-id]]
-   (ajax/GET "/api/update-ticket-by-praxis"
-             {:params {:ticket ticket-id
-                       :props (str {:aufgerufen (daten/ts)})}
-              :handler (fn [response]
-                         (let [schlange (reader/read-string response)]
-                           (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
-              :error-handler #(js/console.log "ERROR" %)})
-   db))
-
-(rf/reg-event-db
- :wartsapp/ticket-entfernen-clicked
- (fn [db [_ ticket-id]]
-   (ajax/GET "/api/update-ticket-by-praxis"
-             {:params {:ticket ticket-id
-                       :props (str {:entfernt (daten/ts)})}
-              :handler (fn [response]
-                         (let [schlange (reader/read-string response)]
-                           (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
-              :error-handler #(js/console.log "ERROR" %)})
-   db))
-
-(rf/reg-event-db
- :wartsapp/schlange-erhalten
- (fn [db [_ ticket]]
-   (assets/set-asset db :wartsapp/schlange "myschlange.edn" ticket)))
-
-(rf/reg-event-db
- :wartsapp/checkin-ticket-nummer-changed
- (fn [db [_ nummer]]
-   (assoc-in db [:wartsapp :praxis :checkin-ticket-nummer] nummer)))
-
-(rf/reg-event-db
- :wartsapp/ticket-praxis-patient-changed
- (fn [db [_ ticket-id value]]
-   (let [schlange (get-in db [:assets/asset-pools :wartsapp/schlange "myschlange.edn"])
-         schlange (daten/update-ticket schlange ticket-id {:praxis-patient value})]
-     (ajax/GET "/api/update-ticket-by-praxis"
-               {:params {:ticket ticket-id
-                         :props (str {:praxis-patient value})}
-                :handler (fn [response]
-                           (let [schlange (reader/read-string response)]
-                             (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
-                :error-handler #(js/console.log "ERROR" %)})
-     (assets/set-asset db :wartsapp/schlange "myschlange.edn" schlange))))
-
-(rf/reg-sub
- :wartsapp/checkin-ticket-nummer
- (fn [db]
-   (get-in db [:wartsapp :praxis :checkin-ticket-nummer])))
-
-
-(rf/reg-event-db
- :wartsapp/checkin-clicked
- (fn [db _]
-   (let [ticket-nummer (get-in db [:wartsapp :praxis :checkin-ticket-nummer])
-         schlange-id (get-in db [:assets/asset-pools :wartsapp/schlange "myschlange.edn" :id])]
-     (ajax/GET "/api/checke-ein"
-               {:params {:schlange schlange-id
-                         :ticket ticket-nummer}
-                :handler (fn [response]
-                           (let [schlange (reader/read-string response)]
-                             (rf/dispatch [:wartsapp/schlange-erhalten schlange])
-                             (when-not (-> schlange :checkin-fehler)
-                               (rf/dispatch [:wartsapp/checkin-ticket-nummer-changed ""]))))
-                :error-handler #(js/console.log "ERROR" %)})
-     db)))
-   ;; (let [ticket-nummer (get-in db [:wartsapp :praxis :checkin-ticket-nummer])
-   ;;       schlange-nummer (get-in db [:wartsapp :praxis :schlange-nummer])
-   ;;       schlange (assets/asset db :wartsapp/schlangen (str schlange-nummer ".edn"))
-   ;;       freie-tickets (get-in db [:assets/asset-pools :wartsapp/tickets])
-   ;;       schlange (daten/einchecken schlange freie-tickets ticket-nummer)
-   ;;       ticket-nummer (if (-> schlange :checkin-fehler)
-   ;;                       ticket-nummer
-   ;;                       "")]
-   ;;   (-> db
-   ;;       (assets/set-asset :wartsapp/schlangen (str schlange-nummer ".edn") schlange)
-   ;;       (assoc-in [:wartsapp :praxis :checkin-ticket-nummer] ticket-nummer)))))
-
-
-(rf/reg-sub
- :wartsapp/schlange
- (fn [db _]
-   (let [schlange-nummer (get-in db [:wartsapp :praxis :schlange-nummer])]
-     (-> db
-         (assets/asset , :wartsapp/schlangen (str schlange-nummer ".edn"))))))
 
 
 ;;; Ticket (Patient Ansicht)
@@ -360,117 +441,19 @@
           [Ticket-Call-To-Action-Box ticket]
           [Ticket-Nummer (-> ticket :nummer)]
           [Notification-Config]])]]
-     ;; [muic/Card [:div "Debug"] [muic/Data ticket]]])
-     (when (or (ticket :unterwegs)
-               (ticket :entfernt)
-               (not (ticket :eingecheckt)))
+     (when (or (-> ticket :unterwegs)
+               (-> ticket :entfernt)
+               (not (-> ticket :eingecheckt)))
        [:> mui/Button
         {:variant :contained
          :color :primary
          :on-click #(rf/dispatch [:wartsapp/ticket-anfordern-clicked])}
         "Neues Ticket ziehen"])]))
 
+
 (defn Ticket-Workarea []
   [Ticket])
 
-(rf/reg-event-db
- :wartsapp/ticket-anfordern-clicked
- (fn [db _]
-   (ajax/GET "/api/ziehe-ticket"
-             {:handler (fn [response]
-                         (let [ticket (reader/read-string response)]
-                           (js/console.log "TICKET" ticket)
-                           (rf/dispatch [:wartsapp/ticket-erhalten ticket])))
-              :error-handler #(js/console.log "ERROR" %)})
-   db))
-
-(rf/reg-event-db
- :wartsapp/ich-bin-unterwegs-clicked
- (fn [db _]
-   (when-let [ticket-id ((get-in db [:assets/asset-pools :wartsapp/ticket "myticket.edn"]) :id)]
-     (ajax/GET "/api/update-ticket-by-patient"
-               {:params {:ticket ticket-id
-                         :props (str {:unterwegs (daten/ts)})}
-                :handler (fn [response]
-                           (let [ticket (reader/read-string response)]
-                             (rf/dispatch [:wartsapp/ticket-erhalten ticket])))
-                :error-handler #(js/console.log "ERROR" %)})
-     db)))
-
-   ;; (let [ticket-nummer (daten/neue-ticket-nummer)
-   ;;       asset-path (str ticket-nummer ".edn")
-   ;;       ticket (or (assets/asset db :wartsapp/tickets asset-path)
-   ;;                  (daten/neues-ticket ticket-nummer "Anonymous"))]
-   ;;   (-> db
-   ;;       (assoc-in [:wartsapp :patient :ticket-nummer] ticket-nummer)
-   ;;       (assets/set-asset :wartsapp/tickets asset-path ticket)))))
-
-
-(rf/reg-event-db
- :wartsapp/poll-ticket
- (fn [db _]
-   (when-let [ticket (get-in db [:assets/asset-pools :wartsapp/ticket "myticket.edn"])]
-     (ajax/GET "/api/ticket"
-               {:params {:id (-> ticket :id)}
-                :handler (fn [response]
-                           (let [ticket (reader/read-string response)]
-                             (rf/dispatch [:wartsapp/ticket-erhalten ticket])))
-                :error-handler #(js/console.log "ERROR" %)}))
-   db))
-
-(rf/reg-event-db
- :wartsapp/poll-schlange
- (fn [db _]
-   (when-let [schlange (get-in db [:assets/asset-pools :wartsapp/schlange "myschlange.edn"])]
-     (ajax/GET "/api/schlange"
-               {:params {:id (-> schlange :id)}
-                :handler (fn [response]
-                           (let [schlange (reader/read-string response)]
-                             (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
-                :error-handler #(js/console.log "ERROR" %)}))
-   db))
-
-(defn show-notification-wenn-aufgerufen [ticket]
-  (when (-> ticket :aufgerufen)
-    (let [localstorage-key (str "notification-aufgerufen-" (-> ticket :id))]
-      (when-not (.getItem (.-localStorage js/window) localstorage-key)
-        (notifications/show-notification
-         "Sie wurden aufgerufen"
-         {:body "Bitte machen Sie sich auf den Weg zur Praxis."
-          :icon "/img/app-icon_128.png"
-          :lang "de"
-          :tag (str "aufgerufen-" (-> ticket :id))
-          :vibrate [300 200 100 200 300]
-          :requireInteraction true
-          :actions [{:action "show:/ui/ticket"
-                     :title "Zum Warteticket"}]})
-        (.setItem (.-localStorage js/window) localstorage-key (daten/ts))))))
-
-(rf/reg-event-db
- :wartsapp/ticket-erhalten
- (fn [db [_ ticket]]
-   (show-notification-wenn-aufgerufen ticket)
-   (assets/set-asset db :wartsapp/ticket "myticket.edn" ticket)))
-
-(rf/reg-event-db
- :wartsapp/schlange-erhalten
- (fn [db [_ schlange]]
-   (assets/set-asset db :wartsapp/schlange "myschlange.edn" schlange)))
-
-
-(rf/reg-sub
- :wartsapp/ticket
- (fn [db _]
-   (let [ticket (get-in db [:assets/asset-pools :wartsapp/ticket "myticket.edn"])]
-     (js/console.log "ticket in sub:" ticket)
-     ticket)))
-
-(rf/reg-sub
- :wartsapp/schlange
- (fn [db _]
-   (let [schlange (get-in db [:assets/asset-pools :wartsapp/schlange "myschlange.edn"])]
-     (js/console.log "schlange in sub:" schlange)
-     schlange)))
 
 
 ;;; Index
