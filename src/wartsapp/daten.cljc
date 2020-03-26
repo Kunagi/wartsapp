@@ -140,3 +140,15 @@
         schlange (update-ticket schlange ticket-id props)]
     (-> system
         (assoc-in [:schlangen schlange-id] schlange))))
+
+
+(defn ticket-for-patient [system ticket-id]
+  (let [ticket (get-in system [:freie-tickets ticket-id])]
+    (if ticket
+      (-> ticket
+          (assoc :eingecheckt? false))
+      (let [schlange-id (get-in system [:ticket-id->schlange-id ticket-id])
+            schlange (get-in system [:schlangen schlange-id])
+            ticket (finde-ticket-by-id (-> schlange :plaetze) ticket-id)]
+        (-> ticket
+            (assoc :eingecheckt? true))))))

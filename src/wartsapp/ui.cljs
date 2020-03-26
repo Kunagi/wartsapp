@@ -55,8 +55,7 @@
                           params)
                 :handler (fn [response]
                            (let [response-value (reader/read-string response)]
-                             (rf/dispatch [response-event-id response-value])))
-                :error-handler #(js/console.log "ERROR" %)})
+                             (rf/dispatch [response-event-id response-value])))})
      db)))
 
 
@@ -101,8 +100,7 @@
                          :props (str {:praxis-patient value})}
                 :handler (fn [response]
                            (let [schlange (reader/read-string response)]
-                             (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
-                :error-handler #(js/console.log "ERROR" %)})
+                             (rf/dispatch [:wartsapp/schlange-erhalten schlange])))})
      (bapp/reset db schlange-lense schlange))))
 
 
@@ -118,8 +116,7 @@
                            (let [schlange (reader/read-string response)]
                              (rf/dispatch [:wartsapp/schlange-erhalten schlange])
                              (when-not (-> schlange :checkin-fehler)
-                               (bapp/dispatch-reset checkin-ticket-nummer ""))))
-                :error-handler #(js/console.log "ERROR" %)})
+                               (bapp/dispatch-reset checkin-ticket-nummer ""))))})
      db)))
 
 
@@ -146,8 +143,7 @@
                {:params {:id (-> ticket :id)}
                 :handler (fn [response]
                            (let [ticket (reader/read-string response)]
-                             (rf/dispatch [:wartsapp/ticket-erhalten ticket])))
-                :error-handler #(js/console.log "ERROR" %)}))
+                             (rf/dispatch [:wartsapp/ticket-erhalten ticket])))}))
    db))
 
 (rf/reg-event-db
@@ -158,8 +154,7 @@
                {:params {:id (-> schlange :id)}
                 :handler (fn [response]
                            (let [schlange (reader/read-string response)]
-                             (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
-                :error-handler #(js/console.log "ERROR" %)}))
+                             (rf/dispatch [:wartsapp/schlange-erhalten schlange])))}))
    db))
 
 

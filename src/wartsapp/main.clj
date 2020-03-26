@@ -16,6 +16,7 @@
 
    [kcu.files :as files]
    [kcu.txa :as txa]
+   [kcu.sapp :as sapp]
 
    [wartsapp.appinfo :refer [appinfo]]
    [wartsapp.daten :as daten]))
@@ -49,6 +50,8 @@
    :store-f (fn [_txa value] (write-state-to-disk! value))})
 
 
+
+
 (defn respond-with-schlange [schlange-id]
   (let [system (txa/read !system)
         schlange (get-in system [:schlangen schlange-id])]
@@ -56,18 +59,8 @@
 
 
 (defn respond-with-ticket [ticket-id]
-  (let [system (txa/read !system)
-        ticket (get-in system [:freie-tickets ticket-id])]
-    (if ticket
-      (-> ticket
-          (assoc :eingecheckt? false)
-          str)
-      (let [schlange-id (get-in system [:ticket-id->schlange-id ticket-id])
-            schlange (get-in system [:schlangen schlange-id])
-            ticket (daten/finde-ticket-by-id (-> schlange :plaetze) ticket-id)]
-        (-> ticket
-            (assoc :eingecheckt? true)
-            str)))))
+  (str
+   (daten/ticket-for-patient (txa/read !system) ticket-id)))
 
 
 (defn serve-ziehe-ticket [_context]
@@ -191,6 +184,9 @@
    :route/path "/api/checke-ein"
    :route/serve-f #(serve-checke-ein %)
    :route/req-perms []})
+
+
+
 
 (appconfig/set-default-config!
  {:http-server/oauth {:google {:enabled? false}}})
