@@ -11,12 +11,23 @@
      :cljs (js/Date.now)))
 
 
+(defn- update-etag
+  [entity]
+  (when entity
+    (assoc entity :etag (new-uuid))))
+
+
+(defn- updatev-etags
+  [entities]
+  (mapv update-etag entities))
+
+
 ;;; warteschlange
 
 
 (defn leere-schlange [id]
   {:id id
-   :bezeichnung "Neue Warteschlange"
+   :etag id
    :plaetze [] ;; vom typ ticket
    :checkin-fehler nil})
 
@@ -44,16 +55,18 @@
        (filter (fn [ticket] (= ticket-id (:id ticket))))
        first))
 
+
 (defn checke-ein-in-schlange [schlange freie-tickets ticket-nummer]
   (let [schlange (dissoc schlange :checkin-fehler)
         ticket (finde-ticket-by-nummer (vals freie-tickets) ticket-nummer)
         bereits-eingecheckt? (ticket-eingecheckt? schlange ticket-nummer)
         ticket (when ticket
                  (assoc ticket :eingecheckt (ts)))]
-    (cond
-      bereits-eingecheckt? [schlange ticket]
-      ticket [(update schlange :plaetze conj ticket) ticket]
-      :else [(assoc schlange :checkin-fehler (str "Ticket-Nummer unbekannt")) nil])))
+    (updatev-etags
+     (cond
+       bereits-eingecheckt? [schlange ticket]
+       ticket [(update schlange :plaetze conj ticket) ticket]
+       :else [(assoc schlange :checkin-fehler (str "Ticket-Nummer unbekannt")) nil]))))
 
 
 (defn update-ticket [schlange ticket-id props]
@@ -61,13 +74,17 @@
         tickets (map (fn [ticket]
                        (if-not (= ticket-id (:id ticket))
                          ticket
-                         (merge ticket props)))
+                         (-> ticket
+                             (merge props)
+                             update-etag)))
                      tickets)]
-    (assoc schlange :plaetze tickets)))
+    (-> schlange
+        (assoc :plaetze tickets)
+        update-etag)))
+
+
 
 ;;; tickets
-
-;; TODO https://github.com/zelark/nano-id
 
 (defonce !ticket-nummern (atom #{}))
 
@@ -85,6 +102,7 @@
 (defn neues-ticket [ticket-id]
   {:nummer (neue-ticket-nummer 3)
    :id ticket-id
+   :etag ticket-id
    :erstellt (ts)
    :praxis-patient ""})
 
