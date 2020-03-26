@@ -35,46 +35,51 @@
   {:parent praxis})
 
 
-(rf/reg-event-db
+(defn reg-ajax-event
+  [event-id
+   {:keys [endpoint params response-event-id]}]
+  (rf/reg-event-db
+   event-id
+   (fn [db event]
+     (ajax/GET endpoint
+               {:params (if (fn? params)
+                          (params db event)
+                          params)
+                :handler (fn [response]
+                           (let [response-value (reader/read-string response)]
+                             (rf/dispatch [response-event-id response-value])))
+                :error-handler #(js/console.log "ERROR" %)})
+     db)))
+
+
+(reg-ajax-event
  :wartsapp/eroeffne-schlange-clicked
- (fn [db _]
-   (ajax/GET "/api/eroeffne-schlange"
-             {:handler (fn [response]
-                         (let [schlange (reader/read-string response)]
-                           (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
-              :error-handler #(js/console.log "ERROR" %)})
-   db))
+ {:endpoint "/api/eroeffne-schlange"
+  :response-event-id :wartsapp/schlange-erhalten})
 
 
-(rf/reg-event-db
+(reg-ajax-event
  :wartsapp/aufrufen-clicked
- (fn [db [_ ticket-id]]
-   (ajax/GET "/api/update-ticket-by-praxis"
-             {:params {:ticket ticket-id
-                       :props (str {:aufgerufen (daten/ts)})}
-              :handler (fn [response]
-                         (let [schlange (reader/read-string response)]
-                           (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
-              :error-handler #(js/console.log "ERROR" %)})
-   db))
+ {:endpoint "/api/update-ticket-by-praxis"
+  :params (fn [_db [_ ticket-id]]
+            {:ticket ticket-id
+             :props (str {:aufgerufen (daten/ts)})})
+  :response-event-id :wartsapp/schlange-erhalten})
 
-(rf/reg-event-db
+
+(reg-ajax-event
  :wartsapp/ticket-entfernen-clicked
- (fn [db [_ ticket-id]]
-   (ajax/GET "/api/update-ticket-by-praxis"
-             {:params {:ticket ticket-id
-                       :props (str {:entfernt (daten/ts)})}
-              :handler (fn [response]
-                         (let [schlange (reader/read-string response)]
-                           (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
-              :error-handler #(js/console.log "ERROR" %)})
-   db))
+ {:endpoint "/api/update-ticket-by-praxis"
+  :params (fn [_db [_ ticket-id]]
+             {:ticket ticket-id
+              :props (str {:entfernt (daten/ts)})})
+  :response-event-id :wartsapp/schlange-erhalten})
+
 
 (rf/reg-event-db
  :wartsapp/schlange-erhalten
  (fn [db [_ ticket]]
    (assets/set-asset db :wartsapp/schlange "myschlange.edn" ticket)))
-
 
 
 (rf/reg-event-db
@@ -109,37 +114,19 @@
      db)))
 
 
-(rf/reg-event-db
+(reg-ajax-event
  :wartsapp/ticket-anfordern-clicked
- (fn [db _]
-   (ajax/GET "/api/ziehe-ticket"
-             {:handler (fn [response]
-                         (let [ticket (reader/read-string response)]
-                           (js/console.log "TICKET" ticket)
-                           (rf/dispatch [:wartsapp/ticket-erhalten ticket])))
-              :error-handler #(js/console.log "ERROR" %)})
-   db))
+ {:endpoint "/api/ziehe-ticket"
+  :response-event-id :wartsapp/ticket-erhalten})
 
-(rf/reg-event-db
+
+(reg-ajax-event
  :wartsapp/ich-bin-unterwegs-clicked
- (fn [db _]
-   (when-let [ticket-id ((get-in db [:assets/asset-pools :wartsapp/ticket "myticket.edn"]) :id)]
-     (ajax/GET "/api/update-ticket-by-patient"
-               {:params {:ticket ticket-id
-                         :props (str {:unterwegs (daten/ts)})}
-                :handler (fn [response]
-                           (let [ticket (reader/read-string response)]
-                             (rf/dispatch [:wartsapp/ticket-erhalten ticket])))
-                :error-handler #(js/console.log "ERROR" %)})
-     db)))
-
-   ;; (let [ticket-nummer (daten/neue-ticket-nummer)
-   ;;       asset-path (str ticket-nummer ".edn")
-   ;;       ticket (or (assets/asset db :wartsapp/tickets asset-path)
-   ;;                  (daten/neues-ticket ticket-nummer "Anonymous"))]
-   ;;   (-> db
-   ;;       (assoc-in [:wartsapp :patient :ticket-nummer] ticket-nummer)
-   ;;       (assets/set-asset :wartsapp/tickets asset-path ticket)))))
+ {:endpoint "/api/update-ticket-by-patient"
+  :params (fn [db _]
+            {:ticket (get-in db [:assets/asset-pools :wartsapp/ticket "myticket.edn" :id])
+             :props (str {:unterwegs (daten/ts)})})
+  :response-event-id :wartsapp/ticket-erhalten})
 
 
 (rf/reg-event-db
@@ -165,6 +152,7 @@
                              (rf/dispatch [:wartsapp/schlange-erhalten schlange])))
                 :error-handler #(js/console.log "ERROR" %)}))
    db))
+
 
 (defn show-notification-wenn-aufgerufen [ticket]
   (when (-> ticket :aufgerufen)
@@ -198,14 +186,12 @@
  :wartsapp/ticket
  (fn [db _]
    (let [ticket (get-in db [:assets/asset-pools :wartsapp/ticket "myticket.edn"])]
-     (js/console.log "ticket in sub:" ticket)
      ticket)))
 
 (rf/reg-sub
  :wartsapp/schlange
  (fn [db _]
    (let [schlange (get-in db [:assets/asset-pools :wartsapp/schlange "myschlange.edn"])]
-     (js/console.log "schlange in sub:" schlange)
      schlange)))
 
 
