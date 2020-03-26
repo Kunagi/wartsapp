@@ -10,6 +10,7 @@
      [re-frame.core :as rf]
      [ajax.core :as ajax]
 
+     [kcu.utils :as u]
      [kcu.bapp :as bapp]
      [mui-commons.components :as muic]
      [mui-commons.theme :as theme]
@@ -130,7 +131,7 @@
  :wartsapp/ich-bin-unterwegs-clicked
  {:endpoint "/api/update-ticket-by-patient"
   :params (fn [db _]
-            {:ticket (bapp/read db ticket-lense)
+            {:ticket (:id (bapp/read db ticket-lense))
              :props (str {:unterwegs (daten/ts)})})
   :response-event-id :wartsapp/ticket-erhalten})
 
@@ -139,8 +140,9 @@
  :wartsapp/poll-ticket
  (fn [db _]
    (when-let [ticket (bapp/read db ticket-lense)]
-     (ajax/GET "/api/ticket"
-               {:params {:id (-> ticket :id)}
+     (ajax/GET "/api/query"
+               {:params {:query (u/encode-edn :wartsapp.main/ticket-fuer-patient)
+                         :args (u/encode-edn {:ticket-id (-> ticket :id)})}
                 :handler (fn [response]
                            (let [ticket (reader/read-string response)]
                              (rf/dispatch [:wartsapp/ticket-erhalten ticket])))}))
@@ -150,8 +152,9 @@
  :wartsapp/poll-schlange
  (fn [db _]
    (when-let [schlange (bapp/read db schlange-lense)]
-     (ajax/GET "/api/schlange"
-               {:params {:id (-> schlange :id)}
+     (ajax/GET "/api/query"
+               {:params {:query (u/encode-edn :wartsapp.main/schlange-fuer-praxis)
+                         :args (u/encode-edn {:schlange-id (-> schlange :id)})}
                 :handler (fn [response]
                            (let [schlange (reader/read-string response)]
                              (rf/dispatch [:wartsapp/schlange-erhalten schlange])))}))

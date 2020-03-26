@@ -142,7 +142,7 @@
         (assoc-in [:schlangen schlange-id] schlange))))
 
 
-(defn ticket-for-patient [system ticket-id]
+(defn ticket-fuer-patient [system ticket-id]
   (let [ticket (get-in system [:freie-tickets ticket-id])]
     (if ticket
       (-> ticket
@@ -152,3 +152,8 @@
             ticket (finde-ticket-by-id (-> schlange :plaetze) ticket-id)]
         (-> ticket
             (assoc :eingecheckt? true))))))
+
+
+(defn schlange-fuer-praxis [system schlange-id]
+  (let [schlange (get-in system [:schlangen schlange-id])]
+    schlange))

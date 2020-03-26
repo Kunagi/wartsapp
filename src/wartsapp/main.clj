@@ -50,6 +50,14 @@
    :store-f (fn [_txa value] (write-state-to-disk! value))})
 
 
+(sapp/def-responder ticket-fuer-patient
+  {:f (fn [context {:keys [ticket-id]}]
+        (daten/ticket-fuer-patient (txa/read !system) ticket-id))})
+
+
+(sapp/def-responder schlange-fuer-praxis
+  {:f (fn [context {:keys [schlange-id]}]
+        (daten/schlange-fuer-praxis (txa/read !system) schlange-id))})
 
 
 (defn respond-with-schlange [schlange-id]
@@ -60,7 +68,7 @@
 
 (defn respond-with-ticket [ticket-id]
   (str
-   (daten/ticket-for-patient (txa/read !system) ticket-id)))
+   (daten/ticket-fuer-patient (txa/read !system) ticket-id)))
 
 
 (defn serve-ziehe-ticket [_context]
@@ -106,35 +114,17 @@
         props (edn/read-string (-> params :props))]
     (txa/transact-sync
      !system
-     (fn [system] (daten/update-ticket-by-patient system ticket-id props)))
+     (fn [system]
+       (tap> [:!!! ::update {:ticket ticket-id :props props}])
+       (daten/update-ticket-by-patient system ticket-id props)))
+    (tap> [:!!! ::updated {:ticket-id ticket-id
+                           :ticket (daten/ticket-fuer-patient (txa/read !system) ticket-id)}])
     (respond-with-ticket ticket-id)))
-
-
-(defn serve-ticket [context]
-  (let [params (-> context :http/request :params)
-        ticket-id (-> params :id)]
-    (respond-with-ticket ticket-id)))
-
-
-(defn serve-schlange [context]
-  (let [params (-> context :http/request :params)
-        schlange-id (-> params :id)]
-    (respond-with-schlange schlange-id)))
-
-
-(defn serve-state [context]
-  (str (txa/read !system)))
 
 
 (def-module
   {:module/id ::demo-serverapp})
 
-(def-route
-  {:route/id ::api-state
-   :route/module [:module/ident :demo-serverapp]
-   :route/path "/api/state"
-   :route/serve-f #(serve-state %)
-   :route/req-perms []})
 
 (def-route
   {:route/id ::api-update-ticket-by-praxis
@@ -151,24 +141,10 @@
    :route/req-perms []})
 
 (def-route
-  {:route/id ::api-ticket
-   :route/module [:module/ident :demo-serverapp]
-   :route/path "/api/ticket"
-   :route/serve-f #(serve-ticket %)
-   :route/req-perms []})
-
-(def-route
   {:route/id ::api-ziehe-ticket
    :route/module [:module/ident :demo-serverapp]
    :route/path "/api/ziehe-ticket"
    :route/serve-f #(serve-ziehe-ticket %)
-   :route/req-perms []})
-
-(def-route
-  {:route/id ::api-schlange
-   :route/module [:module/ident :demo-serverapp]
-   :route/path "/api/schlange"
-   :route/serve-f #(serve-schlange %)
    :route/req-perms []})
 
 (def-route
@@ -184,8 +160,6 @@
    :route/path "/api/checke-ein"
    :route/serve-f #(serve-checke-ein %)
    :route/req-perms []})
-
-
 
 
 (appconfig/set-default-config!

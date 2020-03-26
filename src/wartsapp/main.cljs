@@ -50,6 +50,7 @@
    :page/workarea [(fn [] (ui/Legal-Workarea))]})
 
 
+;; TODO long poll
 (defn poll! []
   (js/setTimeout (fn []
                    (rf/dispatch [:wartsapp/poll-ticket])
