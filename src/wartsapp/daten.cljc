@@ -103,8 +103,7 @@
   {:nummer (neue-ticket-nummer 3)
    :id ticket-id
    :etag ticket-id
-   :erstellt (ts)
-   :praxis-patient ""})
+   :erstellt (ts)})
 
 
 ;; app state
@@ -168,10 +167,13 @@
       (let [schlange-id (get-in system [:ticket-id->schlange-id ticket-id])
             schlange (get-in system [:schlangen schlange-id])
             ticket (finde-ticket-by-id (-> schlange :plaetze) ticket-id)]
-        (-> ticket
-            (assoc :eingecheckt? true))))))
+        (if ticket
+          (-> ticket
+              (assoc :eingecheckt? true))
+          {:id ticket-id}))))) ;; FIXME workaround
 
 
 (defn schlange-fuer-praxis [system schlange-id]
-  (let [schlange (get-in system [:schlangen schlange-id])]
-    schlange))
+  (if-let [schlange (get-in system [:schlangen schlange-id])]
+    schlange
+    {:id schlange-id})) ;; FIXME workaround

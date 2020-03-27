@@ -63,16 +63,21 @@
 (defn respond-with-schlange [schlange-id]
   (let [system (txa/read !system)
         schlange (get-in system [:schlangen schlange-id])]
+    (sapp/flag-subscriptions-in-conversations!
+     schlange-fuer-praxis {:schlange-id schlange-id})
     (str schlange)))
 
 
 (defn respond-with-ticket [ticket-id]
-  (str
-   (daten/ticket-fuer-patient (txa/read !system) ticket-id)))
+  (let [ticket (daten/ticket-fuer-patient (txa/read !system) ticket-id)]
+    (sapp/flag-subscriptions-in-conversations!
+     ticket-fuer-patient {:ticket-id ticket-id})
+    (str ticket)))
 
 
-(defn serve-ziehe-ticket [_context]
-  (let [ticket-id (daten/neue-ticket-id)]
+(defn serve-ziehe-ticket [context]
+  (let [ticket-id (-> context :http/request :params :ticket-id)]
+    (tap> [:!!! ::ziehe-ticket ticket-id])
     (txa/transact-sync
      !system
      (fn [system] (daten/ziehe-ticket system ticket-id)))
@@ -80,7 +85,7 @@
 
 
 (defn serve-eroeffne-schlange [context]
-  (let [schlange-id (daten/neue-schlange-id)]
+  (let [schlange-id (-> context :http/request :params :schlange-id)]
     (txa/transact-sync
      !system
      (fn [system] (daten/eroeffne-schlange system schlange-id)))
@@ -94,6 +99,7 @@
     (txa/transact-sync
      !system
      (fn [system] (daten/checke-ein system schlange-id ticket-nummer)))
+    ;; FIXME (respond-with-ticket ticket-id))
     (respond-with-schlange schlange-id)))
 
 
@@ -105,20 +111,20 @@
     (txa/transact-sync
      !system
      (fn [system] (daten/update-ticket-by-praxis system ticket-id props)))
+    (respond-with-ticket ticket-id)
     (respond-with-schlange schlange-id)))
 
 
 (defn serve-update-ticket-by-patient [context]
   (let [params (-> context :http/request :params)
         ticket-id (-> params :ticket)
-        props (edn/read-string (-> params :props))]
+        props (edn/read-string (-> params :props))
+        schlange-id (get-in (txa/read !system) [:ticket-id->schlange-id ticket-id])] ;; FIXME
     (txa/transact-sync
      !system
      (fn [system]
-       (tap> [:!!! ::update {:ticket ticket-id :props props}])
        (daten/update-ticket-by-patient system ticket-id props)))
-    (tap> [:!!! ::updated {:ticket-id ticket-id
-                           :ticket (daten/ticket-fuer-patient (txa/read !system) ticket-id)}])
+    (respond-with-schlange schlange-id)
     (respond-with-ticket ticket-id)))
 
 

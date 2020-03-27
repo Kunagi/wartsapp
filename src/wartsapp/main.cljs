@@ -69,7 +69,7 @@
   (startup/start!
    {:app/info appinfo})
   (bapp/init!)
-  (poll!)
+  ;; (poll!)
   (mount-app))
 
 (defn shadow-after-load []

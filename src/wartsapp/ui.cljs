@@ -29,6 +29,7 @@
 (bapp/def-lense wartsapp
   {})
 
+
 (bapp/def-lense praxis
   {:parent wartsapp})
 
@@ -37,11 +38,32 @@
 
 (bapp/def-lense schlange-lense
   {:parent praxis
-   :durable? true})
+   :durable? true
+   :server-subscription-query (fn [db lense]
+                                (when-let [schlange-id (:id (bapp/read db lense))]
+                                  [:wartsapp.main/schlange-fuer-praxis
+                                   {:schlange-id schlange-id}]))})
+
+(bapp/def-lense patient
+  {:parent wartsapp})
+
+(declare show-notification-wenn-aufgerufen)
 
 (bapp/def-lense ticket-lense
-  {:parent praxis
-   :durable? true})
+  {:parent patient
+   :durable? true
+   :setter (fn [value]
+             (show-notification-wenn-aufgerufen value)
+             value)
+   :server-subscription-query (fn [db lense]
+                                (when-let [ticket-id (:id (bapp/read db lense))]
+                                  [:wartsapp.main/ticket-fuer-patient
+                                   {:ticket-id ticket-id}]))})
+
+
+(defn post-command!
+  [endpoint params]
+  (ajax/GET endpoint {:params params}))
 
 
 (defn reg-ajax-event
@@ -55,15 +77,19 @@
                           (params db event)
                           params)
                 :handler (fn [response]
-                           (let [response-value (reader/read-string response)]
-                             (rf/dispatch [response-event-id response-value])))})
+                           (when response-event-id
+                             (let [response-value (reader/read-string response)]
+                               (rf/dispatch [response-event-id response-value]))))})
      db)))
 
 
-(reg-ajax-event
+(rf/reg-event-db
  :wartsapp/eroeffne-schlange-clicked
- {:endpoint "/api/eroeffne-schlange"
-  :response-event-id :wartsapp/schlange-erhalten})
+ (fn [db _]
+   (let [schlange-id (daten/neue-schlange-id)
+         schlange (daten/leere-schlange schlange-id)]
+     (post-command! "/api/eroeffne-schlange" {:schlange-id schlange-id})
+     (bapp/reset db schlange-lense schlange))))
 
 
 (reg-ajax-event
@@ -71,8 +97,7 @@
  {:endpoint "/api/update-ticket-by-praxis"
   :params (fn [_db [_ ticket-id]]
             {:ticket ticket-id
-             :props (str {:aufgerufen (daten/ts)})})
-  :response-event-id :wartsapp/schlange-erhalten})
+             :props (str {:aufgerufen (daten/ts)})})})
 
 
 (reg-ajax-event
@@ -80,15 +105,7 @@
  {:endpoint "/api/update-ticket-by-praxis"
   :params (fn [_db [_ ticket-id]]
              {:ticket ticket-id
-              :props (str {:entfernt (daten/ts)})})
-  :response-event-id :wartsapp/schlange-erhalten})
-
-
-(rf/reg-event-db
- :wartsapp/schlange-erhalten
- (fn [db [_ value]]
-   (-> db
-       (bapp/reset schlange-lense value))))
+              :props (str {:entfernt (daten/ts)})})})
 
 
 (rf/reg-event-db
@@ -98,10 +115,7 @@
          schlange (daten/update-ticket schlange ticket-id {:praxis-patient value})]
      (ajax/GET "/api/update-ticket-by-praxis"
                {:params {:ticket ticket-id
-                         :props (str {:praxis-patient value})}
-                :handler (fn [response]
-                           (let [schlange (reader/read-string response)]
-                             (rf/dispatch [:wartsapp/schlange-erhalten schlange])))})
+                         :props (str {:praxis-patient value})}})
      (bapp/reset db schlange-lense schlange))))
 
 
@@ -115,16 +129,18 @@
                          :ticket ticket-nummer}
                 :handler (fn [response]
                            (let [schlange (reader/read-string response)]
-                             (rf/dispatch [:wartsapp/schlange-erhalten schlange])
                              (when-not (-> schlange :checkin-fehler)
                                (bapp/dispatch-reset checkin-ticket-nummer ""))))})
      db)))
 
 
-(reg-ajax-event
+(rf/reg-event-db
  :wartsapp/ticket-anfordern-clicked
- {:endpoint "/api/ziehe-ticket"
-  :response-event-id :wartsapp/ticket-erhalten})
+ (fn [db _]
+   (let [ticket-id (daten/neue-ticket-id)
+         ticket {:id ticket-id}]
+     (post-command! "/api/ziehe-ticket" {:ticket-id ticket-id})
+     (bapp/reset db ticket-lense ticket))))
 
 
 (reg-ajax-event
@@ -132,33 +148,7 @@
  {:endpoint "/api/update-ticket-by-patient"
   :params (fn [db _]
             {:ticket (:id (bapp/read db ticket-lense))
-             :props (str {:unterwegs (daten/ts)})})
-  :response-event-id :wartsapp/ticket-erhalten})
-
-
-(rf/reg-event-db
- :wartsapp/poll-ticket
- (fn [db _]
-   (when-let [ticket (bapp/read db ticket-lense)]
-     (ajax/GET "/api/query"
-               {:params {:query (u/encode-edn :wartsapp.main/ticket-fuer-patient)
-                         :args (u/encode-edn {:ticket-id (-> ticket :id)})}
-                :handler (fn [response]
-                           (let [ticket (reader/read-string response)]
-                             (rf/dispatch [:wartsapp/ticket-erhalten ticket])))}))
-   db))
-
-(rf/reg-event-db
- :wartsapp/poll-schlange
- (fn [db _]
-   (when-let [schlange (bapp/read db schlange-lense)]
-     (ajax/GET "/api/query"
-               {:params {:query (u/encode-edn :wartsapp.main/schlange-fuer-praxis)
-                         :args (u/encode-edn {:schlange-id (-> schlange :id)})}
-                :handler (fn [response]
-                           (let [schlange (reader/read-string response)]
-                             (rf/dispatch [:wartsapp/schlange-erhalten schlange])))}))
-   db))
+             :props (str {:unterwegs (daten/ts)})})})
 
 
 (defn show-notification-wenn-aufgerufen [ticket]
@@ -176,16 +166,6 @@
           :actions [{:action "show:/ui/ticket"
                      :title "Zum Warteticket"}]})
         (.setItem (.-localStorage js/window) localstorage-key (daten/ts))))))
-
-
-(rf/reg-event-db
- :wartsapp/ticket-erhalten
- (fn [db [_ value]]
-   (show-notification-wenn-aufgerufen value)
-   (-> db
-      (bapp/reset ticket-lense value))))
-
-
 
 
 ;;; Warteschlange
@@ -263,7 +243,7 @@
                                        (-> % .-target .-value))
       :on-key-down #(when (= 13 (-> % .-keyCode))
                       (rf/dispatch [:wartsapp/checkin-clicked]))
-      :error (-> schlange :checkin-fehler)
+      :error (boolean (-> schlange :checkin-fehler))
       :helper-text (-> schlange :checkin-fehler)}]
     [:> mui/Button
      {:variant :contained
@@ -606,6 +586,11 @@
 (defn Footer []
   [:div
    {:style {:margin-bottom 45}}
+   [:div.DEBUG
+    {:style {:padding "2em"}}
+    [muic/Card [muic/Data (bapp/subscribe ticket-lense)]]
+    [:hr]
+    [muic/Card [muic/Data (bapp/subscribe bapp/conversation)]]]
    [:div
     {:style {:color "#aaa"
              :padding (theme/spacing)
