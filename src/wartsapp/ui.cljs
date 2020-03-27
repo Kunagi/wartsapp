@@ -586,11 +586,11 @@
 (defn Footer []
   [:div
    {:style {:margin-bottom 45}}
-   [:div.DEBUG
-    {:style {:padding "2em"}}
-    [muic/Card [muic/Data (bapp/subscribe ticket-lense)]]
-    [:hr]
-    [muic/Card [muic/Data (bapp/subscribe bapp/conversation)]]]
+   ;; [:div.DEBUG
+   ;;  {:style {:padding "2em"}}
+   ;;  [muic/Card [muic/Data (bapp/subscribe ticket-lense)]]
+   ;;  [:hr]
+   ;;  [muic/Card [muic/Data (bapp/subscribe bapp/conversation)]]]
    [:div
     {:style {:color "#aaa"
              :padding (theme/spacing)
