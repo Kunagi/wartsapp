@@ -12,6 +12,7 @@
 
    ;; load kunagi-base modules
    [kunagi-base-server.modules.http-server.model :refer [def-route]]
+   [kunagi-base-server.modules.auth-server.model]
    [kunagi-base-server.modules.browserapp.model]
 
    [kcu.files :as files]

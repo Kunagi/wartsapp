@@ -14,6 +14,7 @@
      [kcu.bapp :as bapp]
      [mui-commons.components :as muic]
      [mui-commons.theme :as theme]
+     [kunagi-base-browserapp.components :as kbc]
      [kunagi-base-browserapp.modules.desktop.components :as desktop]
      [kunagi-base-browserapp.modules.assets.api :as assets]
      [kunagi-base-browserapp.notifications :as notifications]
@@ -528,6 +529,10 @@
     [:div
      {:style {:flex-grow 1
               :min-width "1rem"}}]
+
+    (into [:div
+           {:style {:display :flex}}]
+          [[kbc/CommAsyncStatusIndicator]])
 
     (if (agreement-accepted?)
       [desktop/AppBarToolbar])]])

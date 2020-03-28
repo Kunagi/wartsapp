@@ -10,6 +10,9 @@
    [kcu.bapp :as bapp]
 
    [kunagi-base.modules.startup.api :as startup]
+   [kunagi-base-browserapp.modules.auth]
+   [kunagi-base-browserapp.modules.comm-async.api :as comm-async]
+
    [kunagi-base.appmodel :refer [def-module]]
    [kunagi-base-browserapp.modules.desktop.model :refer [def-page]]
    [kunagi-base-browserapp.modules.desktop.api :as desktop]
@@ -68,6 +71,7 @@
   (desktop/install-error-handler)
   (startup/start!
    {:app/info appinfo})
+  (reset! bapp/!send-message-to-server comm-async/send!)
   (bapp/init!)
   ;; (poll!)
   (mount-app))
