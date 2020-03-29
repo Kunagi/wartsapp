@@ -10,18 +10,30 @@
     (assoc this
            :id id
            :nummer nummer
-           :gezogen zeit)))
+           :gezogen zeit
+           :status :gezogen)))
 
 
 (def-event :eingecheckt
-  (fn [this {:keys [schlange time]}]
+  (fn [this {:keys [schlange zeit]}]
     (assoc this
-           :eingecheckt time
-           :schlange schlange)))
+           :eingecheckt zeit
+           :schlange schlange
+           :status :eingecheckt)))
 
+(def-event :aufgerufen
+  (fn [this {:keys [zeit]}]
+    (throw (ex-info "boo" {}))
+    (assoc this
+           :aufgerufen zeit
+           :status :aufgerufen)))
 
-(def-event :geaendert
-  (fn [this {:keys [props]}]
-    (merge this props)))
+(def-event :unterwegst
+  (fn [this {:keys [zeit]}]
+    (assoc this
+           :unterwegs zeit
+           :status :unterwegs)))
 
-
+(def-event :entfernt
+  (fn [this args]
+    (assoc this :enternt? true)))

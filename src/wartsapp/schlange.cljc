@@ -5,20 +5,9 @@
    [kcu.projector :as p :refer [def-event]]))
 
 
-(s/def ::id string?)
-
-
-(def-event :eroeffnet
-  (fn [this {:keys [id]}]
-    this
-    (-> this
-        (assoc :id id
-               :plaetze {}))))
-
-
 (def-event :ticket-eingecheckt
-  (fn [this {:keys [ticket time]}]
-    (let [ticket (assoc ticket :eingecheckt time)]
+  (fn [this {:keys [ticket zeit]}]
+    (let [ticket (assoc ticket :eingecheckt zeit)]
       (-> this
          (assoc-in [:plaetze (-> ticket :id)] ticket)))))
 
@@ -27,6 +16,12 @@
   (fn [this {:keys [id props]}]
     (-> this
         (update-in [:plaetze id] #(merge % props)))))
+
+
+(def-event :ticket-entfernt
+  (fn [this {:keys [id]}]
+    (-> this
+        (update :plaetze dissoc id))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

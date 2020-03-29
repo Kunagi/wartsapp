@@ -69,18 +69,14 @@
 
 (defn reg-ajax-event
   [event-id
-   {:keys [endpoint params response-event-id]}]
+   {:keys [endpoint params]}]
   (rf/reg-event-db
    event-id
    (fn [db event]
      (ajax/GET endpoint
                {:params (if (fn? params)
                           (params db event)
-                          params)
-                :handler (fn [response]
-                           (when response-event-id
-                             (let [response-value (reader/read-string response)]
-                               (rf/dispatch [response-event-id response-value]))))})
+                          params)})
      db)))
 
 
@@ -109,6 +105,7 @@
               :props (str {:entfernt (daten/ts)})})})
 
 
+;; FIXME store names in separate lense
 (rf/reg-event-db
  :wartsapp/ticket-praxis-patient-changed
  (fn [db [_ ticket-id value]]

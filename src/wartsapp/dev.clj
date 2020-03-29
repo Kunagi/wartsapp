@@ -24,8 +24,15 @@
 
 (txa/trigger-command!
  :wartsapp.aggregat
- [:ziehe-ticket
-  {:id "ticket-1"}])
+ [:ziehe-ticket])
+
+
+(txa/trigger-command!
+ :wartsapp.aggregat
+ [:unterwegse
+  {:ticket ticket-id}])
+
+
  ;; [:eroeffne-schlange
  ;;  ;; {:id "schlange-1"}
  ;;  {:id (str "schlange-" (u/current-time-millis))}])
