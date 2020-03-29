@@ -22,6 +22,7 @@
    [wartsapp.appinfo :refer [appinfo]]
    [wartsapp.fonts :as fonts]
    [wartsapp.ui :as ui :refer [Desktop]]
+   [wartsapp.dev-ui :as dev-ui]
 
    [wartsapp.daten :as daten]))
 
@@ -52,6 +53,11 @@
    :page/title-text "Datenschutzerklärung"
    :page/workarea [(fn [] (ui/Legal-Workarea))]})
 
+(def-page
+  {:page/id ::dev
+   :page/ident :dev
+   :page/title-text "Entwicklertests"
+   :page/workarea [(fn [] [dev-ui/Workarea])]})
 
 ;; TODO long poll
 (defn poll! []

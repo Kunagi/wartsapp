@@ -16,8 +16,10 @@
    [kunagi-base-server.modules.browserapp.model]
 
    [kcu.files :as files]
+   [kcu.query :as query]
    [kcu.txa :as txa]
    [kcu.sapp :as sapp]
+   [kcu.aggregator :as aggregator]
 
    [wartsapp.appinfo :refer [appinfo]]
    [wartsapp.daten :as daten]))
@@ -51,12 +53,12 @@
    :store-f (fn [_txa value] (write-state-to-disk! value))})
 
 
-(sapp/def-responder ticket-fuer-patient
+(query/def-responder ticket-fuer-patient
   {:f (fn [context {:keys [ticket-id]}]
         (daten/ticket-fuer-patient (txa/read !system) ticket-id))})
 
 
-(sapp/def-responder schlange-fuer-praxis
+(query/def-responder schlange-fuer-praxis
   {:f (fn [context {:keys [schlange-id]}]
         (daten/schlange-fuer-praxis (txa/read !system) schlange-id))})
 
@@ -175,3 +177,5 @@
 
 (defn -main []
   (startup/start! {:app/info appinfo}))
+
+
