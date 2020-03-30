@@ -23,7 +23,6 @@
 
 (def-event :aufgerufen
   (fn [this {:keys [zeit]}]
-    (throw (ex-info "boo" {}))
     (assoc this
            :aufgerufen zeit
            :status :aufgerufen)))

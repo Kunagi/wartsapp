@@ -11,11 +11,18 @@
 
 
 (def-command :ziehe-ticket
-  (fn [context _args]
+  (fn [context {:keys [patient-id]}]
     (let [nummer "abc"
           id (context :random-uuid)
-          timestamp (context :timestamp)]
-      {:events {
+          zeit (context :timestamp)]
+      {
+       :devents [{:event/name :ticket-gezogen
+                  :ticket/id id
+                  :ticket/nummer nummer
+                  :ticket/gezogen zeit
+                  :patient/id patient-id}]
+
+       :events {
                 [:wartsapp.freie-tickets]
                 [[:gezogen {:nummer nummer
                             :id id}]]
@@ -23,7 +30,7 @@
                 [:wartsapp.ticket id]
                 [[:gezogen {:id id
                             :nummer nummer
-                            :zeit timestamp}]]}
+                            :zeit zeit}]]}
 
        :messages ["Sie haben jetzt ein Warteticket mit einer Nummer für die Praxis."]})))
 
@@ -36,56 +43,76 @@
          {:rejection (str "Ticket " ticket-nummer " nicht gefunden")}
          (let [ticket (context :projection :wartsapp.ticket ticket-id)
                ticket (dissoc ticket :projection/projector)
-               time (context :timestamp)]
-           {:events {
+               zeit (context :timestamp)]
+
+           {
+            :devents [{:event/name :ticket-eingecheckt
+                       :ticket/id ticket-id
+                       :schlange/id schlange-id
+                       :ticket/eingecheckt zeit}]
+
+            :events {
                      [:wartsapp.freie-tickets]
                      [[:entfernt {:nummer ticket-nummer}]]
 
                      [:wartsapp.schlange schlange-id]
-                     [[:ticket-eingecheckt {:ticket ticket :zeit time}]]
+                     [[:ticket-eingecheckt {:ticket ticket :zeit zeit}]]
 
                      [:wartsapp.ticket ticket-id]
-                     [[:eingecheckt {:schlange schlange-id :zeit time}]]}})))))
+                     [[:eingecheckt {:schlange schlange-id :zeit zeit}]]}})))))
 
 
 (def-command :rufe-auf
   (fn [context {:keys [ticket-id]}]
     (let [ticket (context :projection :wartsapp.ticket ticket-id)
           schlange-id (get ticket :schlange)
-          time (context :timestamp)]
+          zeit (context :timestamp)]
       {:browser-push-notifications [{:title "Sie wurden aufgerufen"
                                      :text "Machen Sie sich auf den Weg zur Praxis."
                                      :push-url "http://google-push....."
                                      :push-key "abcdefgh"}]
+       :devents [ {:event/name :ticket-aufgerufen
+                   :ticket/id ticket-id
+                   :ticket/aufgerufen zeit}]
        :events {
                 [:wartsapp.ticket ticket-id]
-                [[:aufgerufen {:zeit time}]]
+                [[:aufgerufen {:zeit zeit}]]
 
                 [:wartsapp.schlange schlange-id]
-                [[:ticket-geaendert {:id ticket-id :props {:aufgerufen time}}]]}})))
+                [[:ticket-geaendert {:id ticket-id :props {:aufgerufen zeit}}]]}})))
 
 
-(def-command :unterwegse
+(def-command :bestaetige-aufruf
   (fn [context {:keys [ticket-id]}]
     (let [ticket (context :projection :wartsapp.ticket ticket-id)
           schlange-id (get ticket :schlange)
-          time (context :timestamp)]
-      {:events {
+          zeit (context :timestamp)]
+
+      {:devents [{:event/name :ticket-aufruf-bestaetigt
+                  :ticket/id ticket-id
+                  :ticket/aufruf-bestaetigt zeit}]
+
+       :events {
+
                 [:wartsapp.ticket ticket-id]
-                [[:unterwegst {:zeit time}]]
+                [[:unterwegst {:zeit zeit}]]
 
                 [:wartsapp.schlange schlange-id]
-                [[:ticket-geaendert {:id ticket-id :props {:unterwegs time}}]]}})))
+                [[:ticket-geaendert {:id ticket-id :props {:unterwegs zeit}}]]}})))
 
 
-(def-command :entferne-ticket-von-schlange
+(def-command :entferne-ticket
   (fn [context {:keys [schlange-id ticket-id]}]
-      {:events {
+    (let [zeit (context :timestamp)]
+      {:devents [{:event/name :ticket-entfernt
+                  :ticket/id ticket-id
+                  :ticket/entfernt zeit}]
+       :events {
                 [:wartsapp.schlange schlange-id]
                 [[:ticket-entfernt {:id ticket-id}]]
 
                 [:wartsapp.ticket ticket-id]
-                [[:entfernt {}]]}}))
+                [[:entfernt {}]]}})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn out [& args])

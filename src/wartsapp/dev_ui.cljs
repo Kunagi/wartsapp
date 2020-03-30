@@ -20,17 +20,18 @@
     {:aggregator (aggregator/aggregator :wartsapp.manager)
      :commands [
 
-                [:ziehe-ticket]
+                [:ziehe-ticket
+                 {:patient-id "patient-1"}]
 
                 [:checke-ein {:schlange-id "schlange-1"
                               :ticket-nummer "abc"}]
 
                 [:rufe-auf {:ticket-id "1"}]
 
-                [:unterwegse {:ticket-id "1"}]
+                [:bestaetige-aufruf {:ticket-id "1"}]
 
-                [:entferne-ticket-von-schlange {:schlange-id "schlange-1"
-                                                :ticket-id "1"}]]}]])
+                [:entferne-ticket {:schlange-id "schlange-1"
+                                   :ticket-id "1"}]]}]])
 
 (defn Workarea []
   [muic/Stack-1

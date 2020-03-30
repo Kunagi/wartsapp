@@ -9,7 +9,7 @@
    [kcu.txa :as txa]
    [kcu.query :as query]
 
-   [wartsapp.aggregat]))
+   [wartsapp.manager]))
 
 
 (tap> [:!!! ::!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! (-> (u/current-time-millis) java.util.Date.)])
@@ -23,12 +23,12 @@
 
 
 (txa/trigger-command!
- :wartsapp.aggregat
- [:ziehe-ticket])
+ :wartsapp.manager
+ [:ziehe-ticket {}])
 
 
 (txa/trigger-command!
- :wartsapp.aggregat
+ :wartsapp.manager
  [:unterwegse
   {:ticket ticket-id}])
 
