@@ -5,13 +5,15 @@
    [kcu.projector :as p :refer [def-event]]))
 
 
+#_(macroexpand-1 '(def-attr nummer))
+
 (def-event :gezogen
-  (fn [this {:keys [id nummer zeit]}]
+  (fn [this event]
     (assoc this
-           :id id
-           :nummer nummer
-           :gezogen zeit
-           :status :gezogen)))
+           :ticket/id (-> event :ticket/id)
+           :ticet/nummer (-> event :ticet/nummer)
+           :ticket/gezogen (-> event :event/time)
+           :ticket/status :gezogen)))
 
 
 (def-event :eingecheckt

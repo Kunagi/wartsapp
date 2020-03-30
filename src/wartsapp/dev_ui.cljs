@@ -18,20 +18,21 @@
   [:div
    [dui/Aggregate-Command-Flow
     {:aggregator (aggregator/aggregator :wartsapp.manager)
+     :projectors [(projector/projector :wartsapp.patient)]
      :commands [
 
                 [:ziehe-ticket
-                 {:patient-id "patient-1"}]
+                 {:patient/id "patient-1"}]
 
-                [:checke-ein {:schlange-id "schlange-1"
-                              :ticket-nummer "abc"}]
+                [:checke-ein {:schlange/id "schlange-1"
+                              :ticket/nummer "a1"}]
 
-                [:rufe-auf {:ticket-id "1"}]
+                [:rufe-auf {:ticket/id "1"}]
 
-                [:bestaetige-aufruf {:ticket-id "1"}]
+                [:bestaetige-aufruf {:ticket/id "1"}]
 
-                [:entferne-ticket {:schlange-id "schlange-1"
-                                   :ticket-id "1"}]]}]])
+                [:entferne-ticket {:schlange/id "schlange-1"
+                                   :ticket/id "1"}]]}]])
 
 (defn Workarea []
   [muic/Stack-1

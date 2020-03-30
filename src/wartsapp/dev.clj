@@ -15,22 +15,22 @@
 (tap> [:!!! ::!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! (-> (u/current-time-millis) java.util.Date.)])
 
 
-(txa/reg-durable-aggregator-txa
- :wartsapp.aggregat
- {:projectors-as-responders [:wartsapp.schlange
-                             :wartsapp.ticket]})
+;; (txa/reg-durable-aggregator-txa
+;;  :wartsapp.aggregat
+;;  {:projectors-as-responders [:wartsapp.schlange
+;;                              :wartsapp.ticket]})
 
 
 
-(txa/trigger-command!
- :wartsapp.manager
- [:ziehe-ticket {}])
+;; (txa/trigger-command!
+;;  :wartsapp.manager
+;;  [:ziehe-ticket {}])
 
 
-(txa/trigger-command!
- :wartsapp.manager
- [:unterwegse
-  {:ticket ticket-id}])
+;; (txa/trigger-command!
+;;  :wartsapp.manager
+;;  [:unterwegse
+;;   {:ticket ticket-id}])
 
 
  ;; [:eroeffne-schlange
@@ -40,6 +40,6 @@
  ;;  {:schlange-id "schlange-1"
  ;;   :ticket-nummer "abc"}])
 
-(query/query-sync
- [:wartsapp.aggregat/wartsapp.ticket {:id "ticket-1"}]
- {:dummy :context})
+;; (query/query-sync
+;;  [:wartsapp.aggregat/wartsapp.ticket {:id "ticket-1"}]
+;;  {:dummy :context})

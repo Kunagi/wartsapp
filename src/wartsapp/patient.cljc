@@ -5,12 +5,11 @@
    [kcu.projector :as p :refer [def-event]]))
 
 
+(p/configure
+ {:id-resolver (fn [event] (-> event :patient/id))})
+
+
 (def-event :ticket-gezogen
-  (fn [this {:keys [ticket-id ticket-nummer zeit patient-id]}]
-    (if (not= patient-id (-> this :projection/entity-id))
-      this
+  (fn [this event]
       (-> this
-          (assoc :ticket {:id ticket-id
-                          :nummer ticket-nummer
-                          :gezogen zeit
-                          :status :gezogen})))))
+          (update :events conj event))))
