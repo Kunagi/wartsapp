@@ -9,7 +9,13 @@
  {:id-resolver (fn [event] (-> event :patient/id))})
 
 
-(def-event :ticket-gezogen
+(def-event :nummer-gezogen
   (fn [this event]
       (-> this
-          (update :events conj event))))
+          (assoc :patient/nummer (-> event :nummer)))))
+
+(def-event :eingecheckt
+  (fn [this event]
+    (-> this
+        (assoc :patient/eingecheckt (-> event :event/time))
+        (assoc :patient/status :eingecheckt))))

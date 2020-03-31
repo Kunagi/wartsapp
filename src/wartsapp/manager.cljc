@@ -32,25 +32,24 @@
       neue-nummer)))
 
 
-(def-command :ziehe-ticket
+(def-command :ziehe-nummer
   (fn [this args context]
     (let [nummer (naechste-freie-nummer (-> this :nummern :verbrauchte) 3)
           id (context :random-uuid)]
-      {:event/name :ticket-gezogen
-       :ticket/id id
-       :ticket/nummer nummer
+      {:event/name :nummer-gezogen
+       :nummer nummer
        :patient/id (-> args :patient/id)})))
 
 
-(def-event :ticket-gezogen
+(def-event :nummer-gezogen
   {:scope [:nummern]}
   (fn [nummern event]
-    (let [nummer (-> event :ticket/nummer)]
+    (let [nummer (-> event :nummer)]
       (-> nummern
 
           ;; ticket-id zur nummer merken
-          (assoc-in [:tickets nummer]
-                    (-> event :ticket/id))
+          (assoc-in [:patienten nummer]
+                    (-> event :patient/id))
 
           ;; nummer verbrauchen
           (update :verbrauchte #(if %
@@ -60,39 +59,40 @@
 
 (def-command :checke-ein
   (fn [this args context]
-    (let [nummer (-> args :ticket/nummer)
-          ticket-id (-> this :nummern :tickets (get nummer))]
-       (if-not ticket-id
-         [{:rejection/text (str "Ticket " nummer " nicht gefunden")}]
-         [{:event/name :ticket-eingecheckt
-           :ticket/id ticket-id
-           :ticket/nummer nummer
+    (let [nummer (-> args :nummer)
+          patient-id (-> this :nummern :patienten (get nummer))]
+       (if-not patient-id
+         [{:rejection/text (str "Nummer " nummer " nicht gefunden")}]
+         [{:event/name :eingecheckt
+           :patient/id patient-id
+           :nummer nummer
            :schlange/id (-> args :schlange/id)}]))))
 
 
-(def-event :ticket-eingecheckt
+(def-event :eingecheckt
   {:scope [:nummern]}
   (fn [nummern event]
-    (let [nummer (-> event :ticket/nummer)]
-      (update nummern :tickets dissoc nummer))))
+    (let [nummer (-> event :patient/nummer)]
+      (update nummern :patienten dissoc nummer))))
 
 
 (def-command :rufe-auf
   (fn [this args context]
-    [{:event/name :ticket-aufgerufen
-      :ticket/id (-> args :ticket/id)}]))
+    [{:event/name :aufgerufen
+      :patient/id (-> args :patient/id)}]))
 
 
 (def-command :bestaetige-aufruf
   (fn [this args context]
-     [{:event/name :ticket-aufruf-bestaetigt
-       :ticket/id (-> args :ticket-/id)}]))
+     [{:event/name :aufruf-bestaetigt
+       :patient/id (-> args :patient-/id)}]))
 
 
-(def-command :entferne-ticket
+(def-command :entferne-patient-von-schlange
   (fn [this args context]
-    {:event/name :ticket-entfernt
-     :ticket/id (-> args :ticket-/id)}))
+    {:event/name :von-schlange-entfernt
+     :patient/id (-> args :patient/id)
+     :schlange/id (-> args :schlange/id)}))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

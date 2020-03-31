@@ -21,18 +21,18 @@
      :projectors [(projector/projector :wartsapp.patient)]
      :commands [
 
-                [:ziehe-ticket
+                [:ziehe-nummer
                  {:patient/id "patient-1"}]
 
                 [:checke-ein {:schlange/id "schlange-1"
-                              :ticket/nummer "a1"}]
+                              :nummer "a1"}]
 
-                [:rufe-auf {:ticket/id "1"}]
+                [:rufe-auf {:patient/id "patient-1"}]
 
-                [:bestaetige-aufruf {:ticket/id "1"}]
+                [:bestaetige-aufruf {:patient/id "1"}]
 
-                [:entferne-ticket {:schlange/id "schlange-1"
-                                   :ticket/id "1"}]]}]])
+                [:entferne-patient-von-schlange {:schlange/id "schlange-1"
+                                                 :patient/id "patient-1"}]]}]])
 
 (defn Workarea []
   [muic/Stack-1
