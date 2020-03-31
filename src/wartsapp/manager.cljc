@@ -34,8 +34,7 @@
 
 (def-command :ziehe-nummer
   (fn [this args context]
-    (let [nummer (naechste-freie-nummer (-> this :nummern :verbrauchte) 3)
-          id (context :random-uuid)]
+    (let [nummer (naechste-freie-nummer (-> this :nummern :verbrauchte) 3)]
       {:event/name :nummer-gezogen
        :nummer nummer
        :patient/id (-> args :patient/id)})))
@@ -72,7 +71,7 @@
 (def-event :eingecheckt
   {:scope [:nummern]}
   (fn [nummern event]
-    (let [nummer (-> event :patient/nummer)]
+    (let [nummer (-> event :nummer)]
       (update nummern :patienten dissoc nummer))))
 
 
@@ -98,7 +97,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(def-test-flow :simplester-gutfall
+(def-test-flow :gutfall-1
   {:projectors [:wartsapp.patient]}
   [
    [:ziehe-nummer
@@ -113,3 +112,28 @@
 
    [:entferne-patient-von-schlange {:schlange/id "schlange-1"
                                     :patient/id "patient-1"}]])
+
+
+(def-test-flow :zwei-mal-gleiche-nummer-in-die-gleiche-schlange-einchecken
+  {:projectors [:wartsapp.patient]}
+  [
+   [:ziehe-nummer
+    {:patient/id "patient-1"}]
+
+   [:checke-ein {:schlange/id "schlange-1"
+                 :nummer "a1"}]
+
+   [:checke-ein {:schlange/id "schlange-1"
+                 :nummer "a1"}]])
+
+(def-test-flow :zwei-mal-gleiche-nummer-in-unterschiedliche-schlangen-einchecken
+  {:projectors [:wartsapp.patient]}
+  [
+   [:ziehe-nummer
+    {:patient/id "patient-1"}]
+
+   [:checke-ein {:schlange/id "schlange-1"
+                 :nummer "a1"}]
+
+   [:checke-ein {:schlange/id "schlange-2"
+                 :nummer "a1"}]])
