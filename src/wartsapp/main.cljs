@@ -8,6 +8,7 @@
    [mui-commons.init :as init]
 
    [kcu.bapp :as bapp]
+   [kcu.aggregator-ui :as aggregator-ui]
 
    [kunagi-base.modules.startup.api :as startup]
    [kunagi-base-browserapp.modules.auth]
@@ -52,6 +53,12 @@
    :page/ident :legal
    :page/title-text "Datenschutzerklärung"
    :page/workarea [(fn [] (ui/Legal-Workarea))]})
+
+(def-page
+  {:page/id ::aggregators
+   :page/ident :aggregators
+   :page/title-text "Command Flows"
+   :page/workarea [(fn [args] [aggregator-ui/Workarea args])]})
 
 (def-page
   {:page/id ::dev

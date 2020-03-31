@@ -3,7 +3,7 @@
    [clojure.spec.alpha :as s]
 
    [kcu.utils :as u]
-   [kcu.aggregator :refer [def-command def-event]]
+   [kcu.aggregator :refer [def-command def-event def-test-flow]]
 
    [wartsapp.patient]
    [wartsapp.schlange]
@@ -96,3 +96,20 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(def-test-flow :simplester-gutfall
+  {:projectors [:wartsapp.patient]}
+  [
+   [:ziehe-nummer
+    {:patient/id "patient-1"}]
+
+   [:checke-ein {:schlange/id "schlange-1"
+                 :nummer "a1"}]
+
+   [:rufe-auf {:patient/id "patient-1"}]
+
+   [:bestaetige-aufruf {:patient/id "1"}]
+
+   [:entferne-patient-von-schlange {:schlange/id "schlange-1"
+                                    :patient/id "patient-1"}]])
