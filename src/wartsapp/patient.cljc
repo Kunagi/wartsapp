@@ -34,7 +34,7 @@
 (def-event :aufruf-bestaetigt
   (fn [this event]
     (assoc this
-           :patient/unterwegs (-> event :event/time)
+           :patient/aufruf-bestaetigt (-> event :event/time)
            :patient/status :aufruf-bestaetigt)))
 
 

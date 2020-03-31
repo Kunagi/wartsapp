@@ -5,34 +5,40 @@
    [kcu.projector :as p :refer [def-event]]))
 
 
-(def-event :ticket-eingecheckt
-  (fn [this {:keys [ticket zeit]}]
-    (let [ticket (assoc ticket :eingecheckt zeit)]
+(p/configure
+ {:id-resolver (fn [event] (-> event :schlange/id))
+  :type :Schlange})
+
+
+(def-event :eingecheckt
+  (fn [this event]
+    (let [patient-id (u/getm event :patient/id)
+          patient {:patient/id patient-id
+                   :patient/nummer (u/getm event :nummer)
+                   :patient/eingecheckt (-> event :event/time)}]
       (-> this
-         (assoc-in [:plaetze (-> ticket :id)] ticket)))))
+          (assoc-in [:plaetze patient-id] patient)))))
 
 
-(def-event :ticket-geaendert
-  (fn [this {:keys [id props]}]
-    (-> this
-        (update-in [:plaetze id] #(merge % props)))))
+(def-event :aufgerufen
+  (fn [this event]
+    (let [patient-id (u/getm event :patient/id)]
+      (-> this
+          (assoc-in [:plaetze patient-id :patient/aufgerufen]
+                    (-> event :event/time))))))
 
 
-(def-event :ticket-entfernt
-  (fn [this {:keys [id]}]
-    (-> this
-        (update :plaetze dissoc id))))
+(def-event :aufruf-bestaetigt
+  (fn [this event]
+    (let [patient-id (u/getm event :patient/id)]
+      (-> this
+          (assoc-in [:plaetze patient-id :patient/aufruf-bestaetigt]
+                    (-> event :event/time))))))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-#_(-> :kcu.schlange
-    p/projector
-    (p/project
-     [[:eroeffnet {:id "s1"
-                   :time 1}]
-      [:ticket-eingecheckt {:ticket {:id "t1"}
-                            :time 1}]
-      [:ticket-geaendert {:ticket-id "t1"
-                          :props {:unterwegs 123}}]]))
+(def-event :von-schlange-entfernt
+  (fn [this event]
+    (let [patient-id (u/getm event :patient/id)]
+      (-> this
+          (assoc-in [:plaetze patient-id :patient/entfernt]
+                    (-> event :event/time))))))

@@ -20,7 +20,7 @@
         (vordefinierte-nummer verbrauchte-nummern (inc idx))
         nummer))))
 
-(defn random-nummer [length]
+(defn- random-nummer [length]
   (.substring (u/random-uuid-string) 0 length))
 
 
@@ -34,57 +34,65 @@
 
 (def-command :ziehe-nummer
   (fn [this args context]
-    (let [nummer (naechste-freie-nummer (-> this :nummern :verbrauchte) 3)]
+    (let [nummer (naechste-freie-nummer (-> this :verbrauchte-nummern) 3)]
       {:event/name :nummer-gezogen
        :nummer nummer
        :patient/id (-> args :patient/id)})))
 
 
 (def-event :nummer-gezogen
-  {:scope [:nummern]}
-  (fn [nummern event]
+  (fn [this event]
     (let [nummer (-> event :nummer)]
-      (-> nummern
+      (-> this
 
           ;; ticket-id zur nummer merken
-          (assoc-in [:patienten nummer]
+          (assoc-in [:nummer->patient nummer]
                     (-> event :patient/id))
 
           ;; nummer verbrauchen
-          (update :verbrauchte #(if %
-                                  (conj % nummer)
-                                  #{nummer}))))))
+          (update :verbrauchte-nummern
+                  #(if % (conj % nummer) #{nummer}))))))
 
 
 (def-command :checke-ein
   (fn [this args context]
-    (let [nummer (-> args :nummer)
-          patient-id (-> this :nummern :patienten (get nummer))]
+    (let [nummer (u/getm args :nummer)
+          patient-id (-> this :nummer->patient (get nummer))
+          schlange-id (-> args :schlange/id)]
        (if-not patient-id
          [{:rejection/text (str "Nummer " nummer " nicht gefunden")}]
          [{:event/name :eingecheckt
            :patient/id patient-id
            :nummer nummer
-           :schlange/id (-> args :schlange/id)}]))))
+           :schlange/id schlange-id}]))))
 
 
 (def-event :eingecheckt
-  {:scope [:nummern]}
-  (fn [nummern event]
-    (let [nummer (-> event :nummer)]
-      (update nummern :patienten dissoc nummer))))
+  (fn [this event]
+    (let [nummer (u/getm event :nummer)
+          patient-id (u/getm event :patient/id)
+          schlange-id (u/getm event :schlange/id)]
+      (-> this
+          (update :nummer->patient dissoc nummer)
+          (assoc-in [:patient->schlange patient-id] schlange-id)))))
 
 
 (def-command :rufe-auf
   (fn [this args context]
-    [{:event/name :aufgerufen
-      :patient/id (-> args :patient/id)}]))
+    (let [patient-id (u/getm args :patient/id)
+          schlange-id (get-in this [:patient->schlange patient-id])]
+      [{:event/name :aufgerufen
+        :patient/id patient-id
+        :schlange/id schlange-id}])))
 
 
 (def-command :bestaetige-aufruf
   (fn [this args context]
-     [{:event/name :aufruf-bestaetigt
-       :patient/id (-> args :patient/id)}]))
+    (let [patient-id (u/getm args :patient/id)
+          schlange-id (get-in this [:patient->schlange patient-id])]
+       [{:event/name :aufruf-bestaetigt
+         :patient/id patient-id
+         :schlange/id schlange-id}])))
 
 
 (def-command :entferne-patient-von-schlange
