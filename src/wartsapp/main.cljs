@@ -23,6 +23,7 @@
    [wartsapp.appinfo :refer [appinfo]]
    [wartsapp.fonts :as fonts]
    [wartsapp.ui :as ui :refer [Desktop]]
+   [wartsapp.patient-ui :as patient-ui]
    [wartsapp.dev-ui :as dev-ui]
 
    [wartsapp.daten :as daten]))

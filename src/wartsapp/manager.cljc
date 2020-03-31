@@ -84,7 +84,7 @@
 (def-command :bestaetige-aufruf
   (fn [this args context]
      [{:event/name :aufruf-bestaetigt
-       :patient/id (-> args :patient-/id)}]))
+       :patient/id (-> args :patient/id)}]))
 
 
 (def-command :entferne-patient-von-schlange
@@ -98,7 +98,6 @@
 
 
 (def-test-flow :gutfall-1
-  {:projectors [:wartsapp.patient]}
   [
    [:ziehe-nummer
     {:patient/id "patient-1"}]
@@ -108,14 +107,13 @@
 
    [:rufe-auf {:patient/id "patient-1"}]
 
-   [:bestaetige-aufruf {:patient/id "1"}]
+   [:bestaetige-aufruf {:patient/id "patient-1"}]
 
    [:entferne-patient-von-schlange {:schlange/id "schlange-1"
                                     :patient/id "patient-1"}]])
 
 
 (def-test-flow :zwei-mal-gleiche-nummer-in-die-gleiche-schlange-einchecken
-  {:projectors [:wartsapp.patient]}
   [
    [:ziehe-nummer
     {:patient/id "patient-1"}]
@@ -127,7 +125,6 @@
                  :nummer "a1"}]])
 
 (def-test-flow :zwei-mal-gleiche-nummer-in-unterschiedliche-schlangen-einchecken
-  {:projectors [:wartsapp.patient]}
   [
    [:ziehe-nummer
     {:patient/id "patient-1"}]
