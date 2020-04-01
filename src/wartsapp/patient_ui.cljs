@@ -6,7 +6,7 @@
    [reagent.core :as r]
 
    [kcu.utils :as u]
-   [kcu.ui :as ui]
+   [kcu.bapp :as bapp]
    [mui-commons.components :as muic]
    [mui-commons.theme :as theme]
 
@@ -17,11 +17,12 @@
   [:> mui/Stepper
    {:alternative-label true
     :active-step (case (-> patient :patient/status)
+                   :entfernt nil
                    :aufruf-bestaetigt 4
                    :aufgerufen 3
                    :eingecheckt 2
                    :frei 1
-                   :entfernt nil)}
+                   nil 0)}
    [:> mui/Step
     [:> mui/StepLabel
      "Ticket ziehen"]]
@@ -115,6 +116,7 @@
 (defn Patient [patient]
   [muic/Stack
    {:spacing (theme/spacing 2)}
+   [muic/Data patient]
    [muic/Card
     {:elevation 0}
     [muic/Stack
@@ -134,4 +136,9 @@
       "Neues Ticket ziehen"])])
 
 
-(ui/def-component Patient)
+(bapp/def-component Patient)
+
+
+(defn Workarea []
+  (let [patient-id (bapp/durable-uuid "patient-id")]
+    [Patient (bapp/projection :wartsapp.patient patient-id)]))

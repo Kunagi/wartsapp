@@ -121,6 +121,28 @@
                                     :patient/id "patient-1"}]])
 
 
+(def-test-flow :gutfall-2
+  [
+   [:ziehe-nummer
+    {:patient/id "patient-1"}]
+
+   [:checke-ein {:schlange/id "schlange-1"
+                 :nummer "a1"}]
+
+   [:ziehe-nummer
+    {:patient/id "patient-2"}]
+
+   [:checke-ein {:schlange/id "schlange-1"
+                 :nummer "a2"}]
+
+   [:rufe-auf {:patient/id "patient-1"}]
+
+   [:bestaetige-aufruf {:patient/id "patient-1"}]
+
+   [:entferne-patient-von-schlange {:schlange/id "schlange-1"
+                                    :patient/id "patient-1"}]])
+
+
 (def-test-flow :zwei-mal-gleiche-nummer-in-die-gleiche-schlange-einchecken
   [
    [:ziehe-nummer

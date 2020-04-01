@@ -8,7 +8,7 @@
    [mui-commons.init :as init]
 
    [kcu.bapp :as bapp]
-   [kcu.aggregator-ui :as aggregator-ui]
+   [kcu.simulator-ui :as simulator-ui]
 
    [kunagi-base.modules.startup.api :as startup]
    [kunagi-base-browserapp.modules.auth]
@@ -38,10 +38,10 @@
    :page/workarea [(fn [] (ui/Index-Workarea))]})
 
 (def-page
-  {:page/id ::ticket
-   :page/ident :ticket
-   :page/title-text "Mein Ticket"
-   :page/workarea [(fn [] (ui/Ticket-Workarea))]})
+  {:page/id ::patient
+   :page/ident :patient
+   :page/title-text "Meine Wartenummer"
+   :page/workarea [(fn [] [patient-ui/Workarea])]})
 
 (def-page
   {:page/id ::schlange
@@ -56,16 +56,22 @@
    :page/workarea [(fn [] (ui/Legal-Workarea))]})
 
 (def-page
-  {:page/id ::aggregators
-   :page/ident :aggregators
-   :page/title-text "Command Flows"
-   :page/workarea [(fn [args] [aggregator-ui/Workarea args])]})
+  {:page/id ::simulator
+   :page/ident :simulator
+   :page/title-text "Simulator"
+   :page/workarea [(fn [args] [simulator-ui/Workarea args])]})
 
 (def-page
   {:page/id ::dev
    :page/ident :dev
    :page/title-text "Entwicklertests"
    :page/workarea [(fn [] [dev-ui/Workarea])]})
+
+
+(bapp/init-projector
+ :wartsapp.patient
+ {:durable? true})
+
 
 ;; TODO long poll
 (defn poll! []
@@ -82,13 +88,17 @@
 (defn init []
   (startup/install-serviceworker!)
   (fonts/install!)
-  (desktop/install-error-handler)
+  ;(desktop/install-error-handler)
   (startup/start!
    {:app/info appinfo})
   (reset! bapp/!send-message-to-server comm-async/send!)
   (bapp/init!)
+  (bapp/dispatch {:event/name :wartsapp/nummer-gezogen ;; FIXME
+                  :patient/id "myself"
+                  :nummer "123"})
   ;; (poll!)
   (mount-app))
+
 
 (defn shadow-after-load []
   (mount-app))

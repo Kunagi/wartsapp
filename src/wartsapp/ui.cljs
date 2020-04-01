@@ -19,6 +19,10 @@
      [kunagi-base-browserapp.modules.assets.api :as assets]
      [kunagi-base-browserapp.notifications :as notifications]
 
+
+     [wartsapp.patient-ui :as patient-ui]
+     [wartsapp.schlange-ui :as schlange-ui]
+
      [wartsapp.appinfo :refer [appinfo]]
      [wartsapp.datenschutzerklaerung :as dse]
      [wartsapp.daten :as daten]))
@@ -462,7 +466,7 @@
               :grid-gap (theme/spacing 2)}}
      [:> mui/Card
       [:> mui/CardActionArea
-       {:href "ticket"}
+       {:href "patient"}
        [:> mui/CardContent
         {:style {:text-align :center}}
         [:h3 "Ich bin Patient"]
