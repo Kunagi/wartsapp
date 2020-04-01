@@ -26,19 +26,20 @@
 
 (def-event :aufgerufen
   (fn [this event]
-    (assoc this
-           :patient/aufgerufen (-> event :event/time)
-           :patient/status :aufgerufen)))
+    (-> this
+        (assoc :patient/aufgerufen (-> event :event/time))
+        (assoc :patient/status :aufgerufen))))
 
 
 (def-event :aufruf-bestaetigt
   (fn [this event]
-    (assoc this
-           :patient/aufruf-bestaetigt (-> event :event/time)
-           :patient/status :aufruf-bestaetigt)))
+    (-> this
+        (assoc :patient/aufruf-bestaetigt (-> event :event/time))
+        (assoc :patient/status :aufruf-bestaetigt))))
 
 
 (def-event :von-schlange-entfernt
   (fn [this event]
-    (assoc this :patient/enternt (-> event :event/time)
-                :patient/status :entfernt)))
+    (-> this
+        (assoc :patient/enternt (-> event :event/time))
+        (assoc :patient/status :entfernt))))
