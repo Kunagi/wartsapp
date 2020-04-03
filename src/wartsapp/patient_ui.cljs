@@ -45,7 +45,7 @@
     "Sie haben den Aufruf bestätigt"]
    [:p "Die Praxis erwartet Sie jetzt"]])
 
-(defn Ticket-Aufgerufen-Box []
+(defn Ticket-Aufgerufen-Box [patient]
   [muic/Card
    {:style {:background-color (theme/color-secondary-main)
             :color (theme/color-secondary-contrast)
@@ -56,7 +56,10 @@
    [:> mui/Button
     {:variant :contained
      :color :primary
-     :on-click #(rf/dispatch [:wartsapp/ich-bin-unterwegs-clicked])}
+     :on-click #(bapp/dispatch-on-server
+                 {:command/name :wartsapp/bestaetige-aufruf
+                  :patient/id (-> patient :patient/id)
+                  :schlange/id (-> patient :patient/schlange)})}
     "Ich bin unterwegs"]])
 
 (defn Ticket-Warten-Box []
@@ -80,7 +83,7 @@
   (case (-> patient :patient/status)
     :entfernt [Ticket-Entfernt-Box]
     :aufruf-bestaetigt [Ticket-Unterwegs-Box]
-    :aufgerufen [Ticket-Aufgerufen-Box]
+    :aufgerufen [Ticket-Aufgerufen-Box patient]
     :eingecheckt [Ticket-Warten-Box]
     nil))
 
@@ -116,7 +119,7 @@
 (defn Patient [patient]
   [muic/Stack
    {:spacing (theme/spacing 2)}
-   [muic/Data patient]
+   ;; [muic/Data patient]
    [muic/Card
     {:elevation 0}
     [muic/Stack
@@ -132,8 +135,11 @@
      [:> mui/Button
       {:variant :contained
        :color :primary
-       :on-click #(rf/dispatch [:wartsapp/ticket-anfordern-clicked])}
-      "Neues Ticket ziehen"])])
+       :on-click #(bapp/dispatch-on-server
+                   {:command/name :wartsapp/ziehe-nummer
+                    :patient/id (-> patient :projection/id)})}
+       ;; #(rf/dispatch [:wartsapp/ticket-anfordern-clicked])}
+      "Neue Nummer ziehen"])])
 
 
 (bapp/def-component Patient)
@@ -141,4 +147,7 @@
 
 (defn Workarea []
   (let [patient-id (bapp/durable-uuid "patient-id")]
+    (bapp/subscribe-on-server {:query/name :system/projection
+                               :projection/projector :wartsapp.patient
+                               :projection/id patient-id})
     [Patient (bapp/projection :wartsapp.patient patient-id)]))

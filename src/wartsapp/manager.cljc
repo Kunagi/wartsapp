@@ -37,7 +37,8 @@
     (let [nummer (naechste-freie-nummer (-> this :verbrauchte-nummern) 3)]
       {:event/name :nummer-gezogen
        :nummer nummer
-       :patient/id (-> args :patient/id)})))
+       :TEST-TIMESTAMP (context :timestamp)
+       :patient/id (u/getm args :patient/id)})))
 
 
 (def-event :nummer-gezogen
@@ -107,60 +108,74 @@
 
 (def-test-flow :gutfall-1
   [
-   [:ziehe-nummer
-    {:patient/id "patient-1"}]
+   {:command/name :ziehe-nummer
+    :patient/id "patient-1"}
 
-   [:checke-ein {:schlange/id "schlange-1"
-                 :nummer "a1"}]
+   {:command/name :checke-ein
+    :schlange/id "schlange-1"
+    :nummer "a1"}
 
-   [:rufe-auf {:patient/id "patient-1"}]
+   {:command/name :rufe-auf
+    :patient/id "patient-1"}
 
-   [:bestaetige-aufruf {:patient/id "patient-1"}]
+   {:command/name :bestaetige-aufruf
+    :patient/id "patient-1"}
 
-   [:entferne-patient-von-schlange {:schlange/id "schlange-1"
-                                    :patient/id "patient-1"}]])
+   {:command/name :entferne-patient-von-schlange
+    :schlange/id "schlange-1"
+    :patient/id "patient-1"}])
 
 
 (def-test-flow :gutfall-2
   [
-   [:ziehe-nummer
-    {:patient/id "patient-1"}]
+   {:command/name :ziehe-nummer
+    :patient/id "patient-1"}
 
-   [:checke-ein {:schlange/id "schlange-1"
-                 :nummer "a1"}]
+   {:command/name :checke-ein
+    :schlange/id "schlange-1"
+    :nummer "a1"}
 
-   [:ziehe-nummer
-    {:patient/id "patient-2"}]
+   {:command/name :ziehe-nummer
+    :patient/id "patient-2"}
 
-   [:checke-ein {:schlange/id "schlange-1"
-                 :nummer "a2"}]
+   {:command/name :checke-ein
+    :schlange/id "schlange-1"
+    :nummer "a2"}
 
-   [:rufe-auf {:patient/id "patient-1"}]
+   {:command/name :rufe-auf
+    :patient/id "patient-1"}
 
-   [:bestaetige-aufruf {:patient/id "patient-1"}]
+   {:command/name :bestaetige-aufruf
+    :patient/id "patient-1"}
 
-   [:entferne-patient-von-schlange {:schlange/id "schlange-1"
-                                    :patient/id "patient-1"}]])
+   {:command/name :entferne-patient-von-schlange
+    :schlange/id "schlange-1"
+    :patient/id "patient-1"}])
 
 
 (def-test-flow :zwei-mal-gleiche-nummer-in-die-gleiche-schlange-einchecken
   [
-   [:ziehe-nummer
-    {:patient/id "patient-1"}]
+   {:command/name :ziehe-nummer
+    :patient/id "patient-1"}
 
-   [:checke-ein {:schlange/id "schlange-1"
-                 :nummer "a1"}]
+   {:comman/name :checke-ein
+    :schlange/id "schlange-1"
+    :nummer "a1"}
 
-   [:checke-ein {:schlange/id "schlange-1"
-                 :nummer "a1"}]])
+   {:comman/name :checke-ein
+    :schlange/id "schlange-1"
+    :nummer "a1"}])
+
 
 (def-test-flow :zwei-mal-gleiche-nummer-in-unterschiedliche-schlangen-einchecken
   [
-   [:ziehe-nummer
-    {:patient/id "patient-1"}]
+   {:command/name :ziehe-nummer
+    :patient/id "patient-1"}
 
-   [:checke-ein {:schlange/id "schlange-1"
-                 :nummer "a1"}]
+   {:comman/name :checke-ein
+    :schlange/id "schlange-1"
+    :nummer "a1"}
 
-   [:checke-ein {:schlange/id "schlange-2"
-                 :nummer "a1"}]])
+   {:comman/name :checke-ein
+    :schlange/id "schlange-2"
+    :nummer "a1"}])

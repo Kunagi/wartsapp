@@ -6,9 +6,22 @@
    [reagent.core :as r]
 
    [kcu.utils :as u]
+   [kcu.butils :as bu]
    [kcu.bapp :as bapp]
+   [kcu.form-ui :as form-ui]
    [mui-commons.components :as muic]
    [mui-commons.theme :as theme]))
+
+
+(defn dispatch-on-server
+  ([command-name schlange]
+   (dispatch-on-server command-name schlange nil))
+  ([command-name schlange options]
+   (bapp/dispatch-on-server
+    (merge
+     {:command/name command-name
+      :schlange/id (-> schlange :projection/id)}
+     options))))
 
 
 (defn- pad-0 [i]
@@ -45,47 +58,108 @@
    [TimeField "Unterwegs" (-> patient :patient/aufruf-bestaetigt)]])
 
 
-(defn Patient__Identifikation [patient]
+(defonce PATIENTEN-INFOS (bu/durable-ratom :patienten-infos {}))
+
+
+(defn patient-info [patient]
+  (get @PATIENTEN-INFOS (-> patient :patient/id)))
+
+
+(defn Patient__Identifikation__Feld [options text]
+  [:div
+   (merge options
+          {:style {:border "1px solid rgba(0, 0, 0, 0.38)"
+                   :border-radius "3px"
+                   :padding 14
+                   :cursor :pointer}})
+   (if text
+     text
+     [:span
+      {:style {:color "#aaa"}}
+      "Patient..."])])
+
+
+(defn Patient__Identifikation [schlange patient]
   [:div
    {:style {:display :grid
             :grid-template-columns "60px auto 60px"}}
    [:h3
     (-> patient :patient/nummer)]
-   [:> mui/TextField
-    {:label "Patient"
-     :default-value (-> patient :patient/praxis-patient)
-     :on-change #(rf/dispatch [:wartsapp/ticket-praxis-patient-changed
-                               (-> patient :patient/id)
-                               (-> % .-target .-value)])}]
+   [form-ui/TextFieldDialog
+    {:title "Patient"
+     :cancel-button-text "Abbrechen"
+     :submit-button-text "Speichern"
+     :trigger [Patient__Identifikation__Feld {} (patient-info patient)]
+     :value (patient-info patient)
+     :on-submit #(swap! PATIENTEN-INFOS assoc
+                        (-> patient :patient/id) (-> @% :value))}]
    [:> mui/IconButton
     {:color :secondary
      :aria-label "Patient Entfernen"
-     :on-click #(rf/dispatch [:wartsapp/ticket-entfernen-clicked (-> patient :patient/id)])}
+     :on-click #(dispatch-on-server :wartsapp/entferne-patient-von-schlange
+                                    schlange
+                                    {:patient/id (-> patient :patient/id)})}
     [:> icons/Delete]]])
 
 
-(defn Patient [patient]
+(defn Patient [schlange patient]
   [muic/Card
    [muic/Stack-1
-    [Patient__Identifikation patient]
+    [Patient__Identifikation schlange patient]
     [Patient__Status patient]
     (when-not (-> patient :patient/aufgerufen)
       [:> mui/Button
        {:variant :contained
         :color :primary
-        :on-click #(rf/dispatch [:wartsapp/aufrufen-clicked (-> patient :id)])}
+        :on-click #(dispatch-on-server :wartsapp/rufe-auf
+                                       schlange
+                                       {:patient/id (-> patient :patient/id)})}
        "Aufrufen"])]])
+
+
+(defn Checkin [schlange]
+  [form-ui/TextFieldDialog
+   {:title "Patientin einchecken"
+    :text "Bitte die Nummer eingeben, welche die Patientin auf ihrem Smartphone gezogen hat."
+    :cancel-button-text "Abbrechen"
+    :submit-button-text "Einchecken"
+    :trigger [:> mui/Button
+              {:variant :contained
+               :color :secondary}
+              "Patientin einchecken ..."]
+    :text-field {:label "Nummer"}
+    :on-submit (fn [STATE]
+                 (dispatch-on-server :wartsapp/checke-ein schlange
+                                     {:nummer (-> @STATE :value)})
+                 true)}])
 
 
 (defn Schlange [schlange]
   [muic/Stack-1
-   (for [patient (->> schlange
-                      :plaetze
-                      vals
-                      (remove #(contains? % :patient/entfernt))
-                      (sort-by :patient/eingecheckt))]
-     ^{:key (-> patient :patient/id)}
-     [Patient patient])])
+   ;; [muic/Data schlange]
+
+   [Checkin schlange]
+
+   (let [patienten (->> schlange
+                        :plaetze
+                        vals
+                        (remove #(contains? % :patient/entfernt))
+                        (sort-by :patient/eingecheckt))]
+     (if (empty? patienten)
+       [:div "Keine Patienten auf der Warteliste"]
+       (for [patient patienten]
+         ^{:key (-> patient :patient/id)}
+         [Patient schlange patient])))])
 
 
 (bapp/def-component Schlange)
+
+
+(defn Workarea []
+  (let [schlange-id (bapp/durable-uuid "schlange-id")
+        schlange (bapp/projection :wartsapp.schlange schlange-id)]
+    (bapp/subscribe-on-server {:query/name :system/projection
+                               :projection/projector :wartsapp.schlange
+                               :projection/id schlange-id})
+    [muic/ErrorBoundary
+     [Schlange schlange]]))

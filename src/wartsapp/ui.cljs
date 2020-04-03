@@ -14,7 +14,7 @@
      [kcu.bapp :as bapp]
      [mui-commons.components :as muic]
      [mui-commons.theme :as theme]
-     [kunagi-base-browserapp.components :as kbc]
+     [kcu.bapp-ui :as bapp-ui]
      [kunagi-base-browserapp.modules.desktop.components :as desktop]
      [kunagi-base-browserapp.modules.assets.api :as assets]
      [kunagi-base-browserapp.notifications :as notifications]
@@ -533,7 +533,7 @@
 
     (into [:div
            {:style {:display :flex}}]
-          [[kbc/CommAsyncStatusIndicator]])
+          [[bapp-ui/SenteStatusIndicator]])
 
     (if (agreement-accepted?)
       [desktop/AppBarToolbar])]])

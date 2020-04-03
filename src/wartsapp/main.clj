@@ -22,7 +22,8 @@
    [kcu.aggregator :as aggregator]
 
    [wartsapp.appinfo :refer [appinfo]]
-   [wartsapp.daten :as daten]))
+   [wartsapp.daten :as daten]
+   [wartsapp.manager]))
 
 
 (def storage-path "app-data")

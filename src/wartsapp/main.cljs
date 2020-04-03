@@ -11,8 +11,6 @@
    [kcu.simulator-ui :as simulator-ui]
 
    [kunagi-base.modules.startup.api :as startup]
-   [kunagi-base-browserapp.modules.auth]
-   [kunagi-base-browserapp.modules.comm-async.api :as comm-async]
 
    [kunagi-base.appmodel :refer [def-module]]
    [kunagi-base-browserapp.modules.desktop.model :refer [def-page]]
@@ -24,6 +22,7 @@
    [wartsapp.fonts :as fonts]
    [wartsapp.ui :as ui :refer [Desktop]]
    [wartsapp.patient-ui :as patient-ui]
+   [wartsapp.schlange-ui :as schlange-ui]
    [wartsapp.dev-ui :as dev-ui]
 
    [wartsapp.daten :as daten]))
@@ -47,7 +46,7 @@
   {:page/id ::schlange
    :page/ident :schlange
    :page/title-text "Warteschlange"
-   :page/workarea [(fn [] (ui/Schlange-Workarea))]})
+   :page/workarea [(fn [] (schlange-ui/Workarea))]})
 
 (def-page
   {:page/id ::legal
@@ -68,18 +67,11 @@
    :page/workarea [(fn [] [dev-ui/Workarea])]})
 
 
-(bapp/init-projector
- :wartsapp.patient
- {:durable? true})
+;; (bapp/init-projector
+;;  :wartsapp.patient
+;;  {:durable? true})
 
 
-;; TODO long poll
-(defn poll! []
-  (js/setTimeout (fn []
-                   (rf/dispatch [:wartsapp/poll-ticket])
-                   (rf/dispatch [:wartsapp/poll-schlange])
-                   (poll!))
-                 1000))
 
 
 (defn mount-app []
@@ -91,13 +83,9 @@
   ;(desktop/install-error-handler)
   (startup/start!
    {:app/info appinfo})
-  (reset! bapp/!send-message-to-server comm-async/send!)
   (bapp/init!)
-  (bapp/dispatch {:event/name :wartsapp/nummer-gezogen ;; FIXME
-                  :patient/id "myself"
-                  :nummer "123"})
-  ;; (poll!)
   (mount-app))
+
 
 
 (defn shadow-after-load []
