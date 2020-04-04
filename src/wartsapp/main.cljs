@@ -84,7 +84,7 @@
 (defn init []
   (startup/install-serviceworker!)
   (fonts/install!)
-  ;(desktop/install-error-handler)
+  (desktop/install-error-handler)
   (startup/start!
    {:app/info appinfo})
   (bapp/init!)
