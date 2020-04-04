@@ -1,14 +1,11 @@
 (ns wartsapp.main
   (:require
-   [re-frame.core :as rf]
-
-   [kunagi-base.logging.tap]
-   [kunagi-base.enable-asserts]
+   [kcu.bapp-init]
+   [kcu.bapp :as bapp]
 
    [mui-commons.init :as init]
 
    [kcu.butils :as bu]
-   [kcu.bapp :as bapp]
    [kcu.simulator-ui :as simulator-ui]
 
    [kunagi-base.modules.startup.api :as startup]

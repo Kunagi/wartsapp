@@ -1,19 +1,15 @@
 (ns wartsapp.main
   (:require
-   [clojure.edn :as edn]
+   [kcu.sapp-init]
+   [kcu.sapp :as sapp]
 
-   [kunagi-base.logging.tap-formated]
-   [kunagi-base.enable-asserts]
-   [kunagi-base.appconfig.load-as-server]
-
-   [kunagi-base.appconfig.api :as appconfig]
+   [kcu.config :as appconfig]
    [kunagi-base.modules.startup.api :as startup]
 
    ;; load kunagi-base modules
    [kunagi-base-server.modules.http-server.model]
    [kunagi-base-server.modules.browserapp.model]
 
-   [kcu.sapp :as sapp]
 
    [wartsapp.appinfo :refer [appinfo]]
    [wartsapp.manager]))
@@ -25,6 +21,5 @@
 
 
 (defn -main []
-  (startup/start! {:app/info appinfo}))
-
-
+  (startup/start! {:app/info appinfo})
+  (sapp/start))

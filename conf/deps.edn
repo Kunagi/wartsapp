@@ -1,5 +1,4 @@
-{:own [kunagi/kunagi-base-server
-       witek/html-tools]
+{:own [kunagi/kunagi-base]
  :foreign {
 
            ;clj
