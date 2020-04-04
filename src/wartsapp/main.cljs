@@ -20,8 +20,7 @@
    [wartsapp.fonts :as fonts]
    [wartsapp.ui :as ui :refer [Desktop]]
    [wartsapp.patient-ui :as patient-ui]
-   [wartsapp.schlange-ui :as schlange-ui]
-   [wartsapp.dev-ui :as dev-ui]))
+   [wartsapp.schlange-ui :as schlange-ui]))
 
 
 (defonce patient-id (bapp/durable-uuid "patient-id"))
@@ -59,12 +58,6 @@
    :page/ident :simulator
    :page/title-text "Simulator"
    :page/workarea [(fn [args] [simulator-ui/Workarea args])]})
-
-(def-page
-  {:page/id ::dev
-   :page/ident :dev
-   :page/title-text "Entwicklertests"
-   :page/workarea [(fn [] [dev-ui/Workarea])]})
 
 
 (defn show-notification-wenn-aufgerufen [patient]

@@ -6,8 +6,7 @@
    [kcu.aggregator :refer [def-command def-event def-test-flow]]
 
    [wartsapp.patient]
-   [wartsapp.schlange]
-   [wartsapp.freie-tickets]))
+   [wartsapp.schlange]))
 
 
 ;; damit jedes system (für testzwecke) zuerst immer folgende nummern generiert
