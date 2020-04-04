@@ -35,10 +35,11 @@
 (def-command :ziehe-nummer
   (fn [this args context]
     (let [nummer (naechste-freie-nummer (-> this :verbrauchte-nummern) 3)]
-      {:event/name :nummer-gezogen
-       :nummer nummer
-       :TEST-TIMESTAMP (context :timestamp)
-       :patient/id (u/getm args :patient/id)})))
+      [{:effect/type :result
+        :nummer nummer}
+       {:event/name :nummer-gezogen
+        :nummer nummer
+        :patient/id (u/getm args :patient/id)}])))
 
 
 (def-event :nummer-gezogen
@@ -61,7 +62,8 @@
           patient-id (-> this :nummer->patient (get nummer))
           schlange-id (-> args :schlange/id)]
        (if-not patient-id
-         [{:rejection/text (str "Nummer " nummer " nicht gefunden")}]
+         [{:effect/type :rejection
+           :text (str "Nummer " nummer " nicht gefunden")}]
          [{:event/name :eingecheckt
            :patient/id patient-id
            :nummer nummer
@@ -158,11 +160,11 @@
    {:command/name :ziehe-nummer
     :patient/id "patient-1"}
 
-   {:comman/name :checke-ein
+   {:command/name :checke-ein
     :schlange/id "schlange-1"
     :nummer "a1"}
 
-   {:comman/name :checke-ein
+   {:command/name :checke-ein
     :schlange/id "schlange-1"
     :nummer "a1"}])
 
@@ -172,10 +174,10 @@
    {:command/name :ziehe-nummer
     :patient/id "patient-1"}
 
-   {:comman/name :checke-ein
+   {:command/name :checke-ein
     :schlange/id "schlange-1"
     :nummer "a1"}
 
-   {:comman/name :checke-ein
+   {:command/name :checke-ein
     :schlange/id "schlange-2"
     :nummer "a1"}])

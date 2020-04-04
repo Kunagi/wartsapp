@@ -10,7 +10,8 @@
    [kcu.bapp :as bapp]
    [kcu.form-ui :as form-ui]
    [mui-commons.components :as muic]
-   [mui-commons.theme :as theme]))
+   [mui-commons.theme :as theme]
+   [clojure.string :as str]))
 
 
 (defn dispatch-on-server
@@ -72,11 +73,11 @@
                    :border-radius "3px"
                    :padding 14
                    :cursor :pointer}})
-   (if text
-     text
+   (if (str/blank? text)
      [:span
       {:style {:color "#aaa"}}
-      "Patient..."])])
+      "Patient..."]
+     text)])
 
 
 (defn Patient__Identifikation [schlange patient]
@@ -129,9 +130,22 @@
               "Patientin einchecken ..."]
     :text-field {:label "Nummer"}
     :on-submit (fn [STATE]
-                 (dispatch-on-server :wartsapp/checke-ein schlange
-                                     {:nummer (-> @STATE :value)})
-                 true)}])
+
+                 (bapp/dispatch-on-server
+                  {:command/name :wartsapp/checke-ein
+                   :schlange/id (-> schlange :projection/id)
+                   :nummer (-> @STATE :value)}
+                  (fn [result]
+                    (if (-> result :rejected?)
+                      (swap! STATE assoc
+                             :blocked? false
+                             :error-text (or (-> result :text)
+                                             "Checkin fehlgeschlagen"))
+                      (swap! STATE assoc :open? false))))
+
+                 (swap! STATE assoc :blocked? true)
+
+                 false)}])
 
 
 (defn Schlange [schlange]
