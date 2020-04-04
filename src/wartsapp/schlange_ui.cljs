@@ -129,7 +129,7 @@
                :color :secondary}
               "Patientin einchecken ..."]
     :text-field {:label "Nummer"}
-    :on-submit (fn [STATE]
+    :on-submit (fn [STATE {:keys [close block unblock]}]
 
                  (bapp/dispatch-on-server
                   {:command/name :wartsapp/checke-ein
@@ -137,13 +137,12 @@
                    :nummer (-> @STATE :value)}
                   (fn [result]
                     (if (-> result :rejected?)
-                      (swap! STATE assoc
-                             :blocked? false
-                             :error-text (or (-> result :text)
-                                             "Checkin fehlgeschlagen"))
-                      (swap! STATE assoc :open? false))))
+                      (unblock
+                       {:error-text (or (-> result :text)
+                                        "Checkin fehlgeschlagen")})
+                      (close))))
 
-                 (swap! STATE assoc :blocked? true)
+                 (block)
 
                  false)}])
 

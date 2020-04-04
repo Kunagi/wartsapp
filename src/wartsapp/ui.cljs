@@ -1,14 +1,11 @@
 (ns wartsapp.ui
   (:require
-     [cljs.reader :as reader]
      [clojure.string :as string]
      [goog.object :as gobj]
      ["@material-ui/core/colors" :as mui-colors]
      ["@material-ui/core" :as mui]
      ["@material-ui/icons" :as icons]
      [reagent.core :as r]
-     [re-frame.core :as rf]
-     [ajax.core :as ajax]
 
      [kcu.utils :as u]
      [kcu.bapp :as bapp]
@@ -16,16 +13,9 @@
      [mui-commons.theme :as theme]
      [kcu.bapp-ui :as bapp-ui]
      [kunagi-base-browserapp.modules.desktop.components :as desktop]
-     [kunagi-base-browserapp.modules.assets.api :as assets]
-     [kunagi-base-browserapp.notifications :as notifications]
-
-
-     [wartsapp.patient-ui :as patient-ui]
-     [wartsapp.schlange-ui :as schlange-ui]
 
      [wartsapp.appinfo :refer [appinfo]]
-     [wartsapp.datenschutzerklaerung :as dse]
-     [wartsapp.daten :as daten]))
+     [wartsapp.datenschutzerklaerung :as dse]))
 
 
 ;;; Index
@@ -82,7 +72,7 @@
        {:href "patient"}
        [:> mui/CardContent
         {:style {:text-align :center}}
-        [:h3 "Ich bin Patient"]
+        [:h3 "Ich bin Patientin"]
         [:p "Ich möchte einen digitalen Warteplatz"]]]]
      [:> mui/Card
       [:> mui/CardActionArea

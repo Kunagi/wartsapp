@@ -9,12 +9,7 @@
    [kcu.butils :as bu]
    [kcu.bapp :as bapp]
    [mui-commons.components :as muic]
-   [mui-commons.theme :as theme]
-
-   [kunagi-base-browserapp.notifications :as notifications]))
-
-
-
+   [mui-commons.theme :as theme]))
 
 
 (defn Stepper [patient]
@@ -103,7 +98,7 @@
 
 
 (defn Notification-Config []
-  (let [!permission-granted? (r/atom (notifications/permission-granted?))]
+  (let [!permission-granted? (r/atom (bu/notifications-permission-granted?))]
     (fn []
       [:div
        (when-not @!permission-granted?
@@ -113,7 +108,7 @@
           [:> mui/Button
            {:variant :contained
             :color :primary
-            :on-click #(notifications/request-permission
+            :on-click #(bu/request-notifications-permission
                         (fn [result]
                           (tap> [::dbg ::permission-result result])
                           (reset! !permission-granted? (= "granted" result))))}
@@ -149,31 +144,12 @@
 (bapp/def-component Patient)
 
 
-(defn show-notification-wenn-aufgerufen [patient]
-  (js/console.log "NOTIFICATION" patient)
-  (when-let [aufgerufen (-> patient :patient/aufgerufen)]
-    (let [localstorage-key (str "notification-aufgerufen_"
-                                (-> patient :id)
-                                "_" aufgerufen)]
-      (when-not (bu/get-from-local-storage localstorage-key)
-        (notifications/show-notification
-         "Sie wurden aufgerufen"
-         {:body "Bitte machen Sie sich auf den Weg zur Praxis."
-          :icon "/img/app-icon_128.png"
-          :lang "de"
-          :tag (str "aufgerufen-" (-> patient :id))
-          :vibrate [300 200 100 200 300]
-          :requireInteraction true
-          :actions [{:action "show:/ui/patient"
-                     :title "Zur Wartenummer"}]})
-        (bu/set-to-local-storage localstorage-key (u/current-time-millis))))))
 
 
-(defn Workarea []
-  (let [patient-id (bapp/durable-uuid "patient-id")
-        patient (bapp/projection :wartsapp.patient patient-id)]
+
+(defn Workarea [patient-id]
+  (let [patient (bapp/projection :wartsapp.patient patient-id)]
     (bapp/subscribe-on-server {:query/name :system/projection
                                :projection/projector :wartsapp.patient
                                :projection/id patient-id})
-    (show-notification-wenn-aufgerufen patient)
     [Patient patient]))

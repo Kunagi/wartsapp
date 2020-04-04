@@ -13,6 +13,10 @@
 (def-event :nummer-gezogen
   (fn [this event]
     (-> this
+        (dissoc :patient/eingecheckt
+                :patient/aufgerufen
+                :patient/aufruf-bestaetigt
+                :patient/enternt)
         (assoc :patient/id (-> event :patient/id))
         (assoc :patient/nummer (-> event :nummer))
         (assoc :patient/status :frei))))

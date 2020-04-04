@@ -7,6 +7,7 @@
 
    [mui-commons.init :as init]
 
+   [kcu.butils :as bu]
    [kcu.bapp :as bapp]
    [kcu.simulator-ui :as simulator-ui]
 
@@ -23,6 +24,9 @@
    [wartsapp.dev-ui :as dev-ui]))
 
 
+(defonce patient-id (bapp/durable-uuid "patient-id"))
+
+
 (def-module
   {:module/id ::demo-browserapp})
 
@@ -36,7 +40,7 @@
   {:page/id ::patient
    :page/ident :patient
    :page/title-text "Meine Wartenummer"
-   :page/workarea [(fn [] [patient-ui/Workarea])]})
+   :page/workarea [(fn [] [patient-ui/Workarea patient-id])]})
 
 (def-page
   {:page/id ::schlange
@@ -63,8 +67,24 @@
    :page/workarea [(fn [] [dev-ui/Workarea])]})
 
 
+(defn show-notification-wenn-aufgerufen [patient]
+  (when-let [aufgerufen (-> patient :patient/aufgerufen)]
+    (bu/show-notification-once
+     [(-> patient :id) aufgerufen]
+     "Sie wurden aufgerufen"
+     {:body "Bitte machen Sie sich auf den Weg zur Praxis."
+      :icon "/img/app-icon_128.png"
+      :lang "de"
+      :tag (str "aufgerufen-" (-> patient :id))
+      :vibrate [300 200 100 200 300]
+      :requireInteraction true
+      :actions [{:action "show:/ui/patient"
+                 :title "Zur Wartenummer"}]})))
+
+
 (defn mount-app []
   (init/mount-app Desktop))
+
 
 (defn init []
   (startup/install-serviceworker!)
@@ -73,6 +93,10 @@
   (startup/start!
    {:app/info appinfo})
   (bapp/init!)
+  (add-watch (bapp/projection-bucket :wartsapp.patient patient-id)
+             ::notification
+             (fn [_ _ _ patient]
+               (show-notification-wenn-aufgerufen patient)))
   (mount-app))
 
 
