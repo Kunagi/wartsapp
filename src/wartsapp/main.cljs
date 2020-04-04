@@ -14,18 +14,14 @@
 
    [kunagi-base.appmodel :refer [def-module]]
    [kunagi-base-browserapp.modules.desktop.model :refer [def-page]]
-   [kunagi-base-browserapp.modules.desktop.api :as desktop]
-   [kunagi-base-browserapp.modules.assets.api :as assets]
-   [kunagi-base-browserapp.modules.assets.model :refer [def-asset-pool]]
 
    [wartsapp.appinfo :refer [appinfo]]
    [wartsapp.fonts :as fonts]
    [wartsapp.ui :as ui :refer [Desktop]]
    [wartsapp.patient-ui :as patient-ui]
    [wartsapp.schlange-ui :as schlange-ui]
-   [wartsapp.dev-ui :as dev-ui]
+   [wartsapp.dev-ui :as dev-ui]))
 
-   [wartsapp.daten :as daten]))
 
 (def-module
   {:module/id ::demo-browserapp})
@@ -65,13 +61,6 @@
    :page/ident :dev
    :page/title-text "Entwicklertests"
    :page/workarea [(fn [] [dev-ui/Workarea])]})
-
-
-;; (bapp/init-projector
-;;  :wartsapp.patient
-;;  {:durable? true})
-
-
 
 
 (defn mount-app []
