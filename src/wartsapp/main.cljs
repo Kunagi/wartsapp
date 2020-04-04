@@ -79,13 +79,13 @@
   (init/mount-app Desktop))
 
 
+
 (defn init []
-  (startup/install-serviceworker!)
   (fonts/install!)
   (desktop/install-error-handler)
-  (startup/start!
-   {:app/info appinfo})
-  (bapp/init!)
+  (startup/start!)
+
+  (bapp/start)
   (add-watch (bapp/projection-bucket :wartsapp.patient patient-id)
              ::notification
              (fn [_ _ _ patient]

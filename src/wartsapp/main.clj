@@ -3,7 +3,7 @@
    [kcu.sapp-init]
    [kcu.sapp :as sapp]
 
-   [kcu.config :as appconfig]
+   [kcu.config :as config]
    [kunagi-base.modules.startup.api :as startup]
 
    ;; load kunagi-base modules
@@ -16,10 +16,12 @@
 
 
 
-(appconfig/set-default-config!
+(config/set-default-config!
  {:http-server/oauth {:google {:enabled? false}}})
+
+(config/set-appinfo appinfo)
 
 
 (defn -main []
-  (startup/start! {:app/info appinfo})
+  (startup/start!)
   (sapp/start))
