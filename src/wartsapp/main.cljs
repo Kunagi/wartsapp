@@ -14,6 +14,7 @@
    [kunagi-base.modules.startup.api :as startup]
 
    [kunagi-base.appmodel :refer [def-module]]
+   [kunagi-base-browserapp.modules.desktop.api :as desktop]
    [kunagi-base-browserapp.modules.desktop.model :refer [def-page]]
 
    [wartsapp.patient]
