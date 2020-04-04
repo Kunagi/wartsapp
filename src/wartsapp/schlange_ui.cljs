@@ -157,7 +157,8 @@
                         :plaetze
                         vals
                         (remove #(contains? % :patient/entfernt))
-                        (sort-by :patient/eingecheckt))]
+                        (sort-by :patient/eingecheckt)
+                        (reverse))]
      (if (empty? patienten)
        [:div "Keine Patienten auf der Warteliste"]
        (for [patient patienten]

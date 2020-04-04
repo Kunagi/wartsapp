@@ -16,6 +16,8 @@
    [kunagi-base.appmodel :refer [def-module]]
    [kunagi-base-browserapp.modules.desktop.model :refer [def-page]]
 
+   [wartsapp.patient]
+   [wartsapp.schlange]
    [wartsapp.appinfo :refer [appinfo]]
    [wartsapp.fonts :as fonts]
    [wartsapp.ui :as ui :refer [Desktop]]

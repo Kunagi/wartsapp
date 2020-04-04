@@ -217,7 +217,9 @@
     :app-bar [AppBar]
     :font-family "'Montserrat', sans-serif"
     :document-title-suffix "WartsApp"
+    :container-max-width "md"
     :footer [Footer]}])
+
 
 
 (theme/set-theme! theme)

@@ -2,5 +2,5 @@
 
 npm install
 rm -rf .shadow-cljs target/public/main.js target/public/cljs-runtime
-shadow-cljs compile browserapp
+#shadow-cljs compile browserapp
 shadow-cljs watch browserapp
