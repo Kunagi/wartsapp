@@ -1,6 +1,7 @@
 (ns wartsapp.fonts
   (:require
-   [mui-commons.init :as init]))
+   [kcu.utils :as u]
+   [kcu.butils :as bu]))
 
 
 ;; https://google-webfonts-helper.herokuapp.com/fonts/montserrat?subsets=latin
@@ -40,6 +41,6 @@
 ")
 
 
-(defn install! []
-  (init/install-css font-montserrat))
+(u/do-once
+  (bu/install-css font-montserrat))
   ;(init/install-css font-indieflower))

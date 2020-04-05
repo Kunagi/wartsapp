@@ -3,8 +3,6 @@
    [kcu.bapp-init]
    [kcu.bapp :as bapp]
 
-   [mui-commons.init :as init]
-
    [kcu.butils :as bu]
    [kcu.simulator-ui :as simulator-ui]
 
@@ -14,10 +12,10 @@
    [kunagi-base-browserapp.modules.desktop.api :as desktop]
    [kunagi-base-browserapp.modules.desktop.model :refer [def-page]]
 
+   [wartsapp.fonts]
    [wartsapp.patient]
    [wartsapp.schlange]
    [wartsapp.appinfo :refer [appinfo]]
-   [wartsapp.fonts :as fonts]
    [wartsapp.ui :as ui :refer [Desktop]]
    [wartsapp.patient-ui :as patient-ui]
    [wartsapp.schlange-ui :as schlange-ui]))
@@ -75,13 +73,7 @@
                  :title "Zur Wartenummer"}]})))
 
 
-(defn mount-app []
-  (init/mount-app Desktop))
-
-
-
 (defn init []
-  (fonts/install!)
   (desktop/install-error-handler)
   (startup/start!)
 
@@ -90,9 +82,10 @@
              ::notification
              (fn [_ _ _ patient]
                (show-notification-wenn-aufgerufen patient)))
-  (mount-app))
+
+  (bapp/mount-app Desktop))
 
 
 
 (defn shadow-after-load []
-  (mount-app))
+  (bapp/mount-app Desktop))
